@@ -1,0 +1,11 @@
+resolver: lts-8.6
+
+packages:
+- '.'
+- '../big-engine'
+
+extra-deps: []
+
+flags: {}
+
+extra-package-dbs: []

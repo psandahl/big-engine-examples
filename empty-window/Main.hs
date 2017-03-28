@@ -1,0 +1,35 @@
+module Main where
+
+import           Control.Monad.IO.Class (liftIO)
+import           Graphics.BigEngine
+import qualified Graphics.GL            as GL
+
+main :: IO ()
+main = do
+    let conf = Configuration { versionMajor = 3
+                             , versionMinor = 3
+                             , displayMode = SizedScreen (1024, 768)
+                             , windowCaption = "Empty Window"
+                             , preamble = preambleCallback
+                             , frame = frameCallback
+                             , postamble = postambleCallback
+                             }
+    res <- runEngine conf 0
+    print res
+
+preambleCallback :: Render Int (Either String ())
+preambleCallback = do
+    GL.glClearColor 0 0 0.4 0
+    putAppState 1
+    return $ Right ()
+
+frameCallback :: Render Int ()
+frameCallback = do
+    GL.glClear GL.GL_COLOR_BUFFER_BIT
+    modifyAppState (+ 1)
+
+postambleCallback :: Render Int ()
+postambleCallback = do
+    liftIO $ putStrLn "Postamble"
+    state <- getAppState
+    liftIO $ print state
