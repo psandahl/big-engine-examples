@@ -47,4 +47,8 @@ frameCallback = do
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
 postambleCallback :: Render State ()
-postambleCallback = return ()
+postambleCallback = do
+    state <- getAppState
+    case program state of
+        Just prog -> delete prog
+        Nothing   -> return ()
