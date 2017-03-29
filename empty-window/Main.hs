@@ -1,7 +1,7 @@
 module Main where
 
 import           Control.Monad.IO.Class (liftIO)
-import           Graphics.BigEngine
+import           Graphics.Big
 import qualified Graphics.GL            as GL
 
 import           System.IO              (hFlush, stdout)
