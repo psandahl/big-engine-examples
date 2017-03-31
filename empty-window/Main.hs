@@ -17,15 +17,15 @@ main = do
                              , eachFrame = frameCallback
                              , teardown = teardownCallback
                              }
-    res <- runEngine conf 0
+    res <- runEngine conf
     print res
 
-setupCallback :: Render Int (Either String ())
+setupCallback :: Render Int (Either String Int)
 setupCallback = do
+    liftIO $ putStrLn "setup"
     GL.glClearColor 0 0 0.4 0
-    putAppState 1
     setWindowSizeCallback (Just windowSizeCallback)
-    return $ Right ()
+    return $ Right 1
 
 frameCallback :: Render Int ()
 frameCallback = do
@@ -34,8 +34,8 @@ frameCallback = do
 
 teardownCallback :: Render Int ()
 teardownCallback = do
-    liftIO $ putStrLn "Postamble"
-    state <- getAppState
+    liftIO $ putStrLn "teardown"
+    state <- getAppStateUnsafe
     liftIO $ print state
 
 windowSizeCallback :: Int -> Int -> Render Int ()

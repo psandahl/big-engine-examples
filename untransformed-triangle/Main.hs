@@ -6,7 +6,7 @@ import           Graphics.Big
 import qualified Graphics.GL            as GL
 
 data State = State
-    { program :: !(Maybe Program)
+    { program :: !Program
     } deriving Show
 
 main :: IO ()
@@ -19,10 +19,10 @@ main = do
                              , eachFrame = frameCallback
                              , teardown = teardownCallback
                              }
-    result <- runEngine conf $ State { program = Nothing }
+    result <- runEngine conf
     print result
 
-setupCallback :: Render State (Either String ())
+setupCallback :: Render State (Either String State)
 setupCallback = do
     vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
@@ -34,10 +34,8 @@ setupCallback = do
 
     case eProg of
         Right prog -> do
-            modifyAppState $ \state -> state { program = Just prog }
-
             GL.glClearColor 0 0 0.4 0
-            return $ Right ()
+            return $ Right State { program = prog }
 
         Left err -> return $ Left err
 
@@ -48,7 +46,5 @@ frameCallback = do
 
 teardownCallback :: Render State ()
 teardownCallback = do
-    state <- getAppState
-    case program state of
-        Just prog -> delete prog
-        Nothing   -> return ()
+    state <- getAppStateUnsafe
+    delete (program state)
