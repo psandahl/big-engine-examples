@@ -1,6 +1,6 @@
 module Main where
 
-import           Control.Monad.IO.Class   (liftIO)
+import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import qualified Data.ByteString.Char8    as BS
 import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.Big
@@ -29,13 +29,7 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
-    fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
-    eProg <-
-        fromByteString
-            [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
-            , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
-            ]
+    eProg <- loadProgram
 
     case eProg of
         Right prog -> do
@@ -66,6 +60,15 @@ teardownCallback = do
 
     deleteMesh (mesh state)
     deleteProgram (program state)
+
+loadProgram :: MonadIO m => m (Either String Program)
+loadProgram = do
+    vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
+    fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
+    fromByteString
+        [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
+        , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
+        ]
 
 vertices :: Vector Vertex
 vertices =
