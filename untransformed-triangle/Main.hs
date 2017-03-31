@@ -15,15 +15,15 @@ main = do
                              , versionMinor = 3
                              , displayMode = SizedScreen (1024, 768)
                              , windowCaption = "Untransformed Triangle"
-                             , preamble = preambleCallback
-                             , frame = frameCallback
-                             , postamble = postambleCallback
+                             , setup = setupCallback
+                             , eachFrame = frameCallback
+                             , teardown = teardownCallback
                              }
     result <- runEngine conf $ State { program = Nothing }
     print result
 
-preambleCallback :: Render State (Either String ())
-preambleCallback = do
+setupCallback :: Render State (Either String ())
+setupCallback = do
     vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
     eProg <-
@@ -46,8 +46,8 @@ frameCallback :: Render State ()
 frameCallback = do
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
-postambleCallback :: Render State ()
-postambleCallback = do
+teardownCallback :: Render State ()
+teardownCallback = do
     state <- getAppState
     case program state of
         Just prog -> delete prog
