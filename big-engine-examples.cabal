@@ -32,4 +32,5 @@ executable untransformed-triangle
                      , bytestring
                      , linear
                      , OpenGLRaw
+                     , vector
   ghc-options:         -Wall -O2

@@ -1,12 +1,17 @@
 module Main where
 
-import           Control.Monad.IO.Class (liftIO)
-import qualified Data.ByteString.Char8  as BS
+import           Control.Monad.IO.Class   (liftIO)
+import qualified Data.ByteString.Char8    as BS
+import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.Big
-import qualified Graphics.GL            as GL
+import           Graphics.Big.Mesh.Vert_P (Vertex (..))
+import           Graphics.GL              (GLuint)
+import qualified Graphics.GL              as GL
+import           Linear                   (V3 (..))
 
 data State = State
     { program :: !Program
+    , mesh    :: !Mesh
     } deriving Show
 
 main :: IO ()
@@ -35,16 +40,40 @@ setupCallback = do
     case eProg of
         Right prog -> do
             GL.glClearColor 0 0 0.4 0
-            return $ Right State { program = prog }
+            mesh' <- fromVectors StaticDraw vertices indices
+            return $ Right State { program = prog, mesh = mesh' }
 
         Left err -> return $ Left err
 
 
 frameCallback :: Render State ()
 frameCallback = do
+    state <- getAppStateUnsafe
+
     GL.glClear GL.GL_COLOR_BUFFER_BIT
+    enableProgram (program state)
+    enableMesh (mesh state)
+
+    renderMesh Triangles (mesh state)
+
+    disableMesh
+    disableProgram
+
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    delete (program state)
+
+    deleteMesh (mesh state)
+    deleteProgram (program state)
+
+vertices :: Vector Vertex
+vertices =
+    fromList
+        [ Vertex { position = V3   0    1  0 }
+        , Vertex { position = V3 (-1) (-1) 0 }
+        , Vertex { position = V3   1  (-1) 0 }
+        ]
+
+indices :: Vector GLuint
+indices = fromList [0, 1, 2]
