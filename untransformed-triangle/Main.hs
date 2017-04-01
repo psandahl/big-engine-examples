@@ -21,7 +21,8 @@ main = do
                              , displayMode = SizedScreen (1024, 768)
                              , windowCaption = "Untransformed Triangle"
                              , setup = setupCallback
-                             , eachFrame = frameCallback
+                             , animate = return ()
+                             , render = renderCallback
                              , teardown = teardownCallback
                              }
     result <- runEngine conf
@@ -40,8 +41,8 @@ setupCallback = do
         Left err -> return $ Left err
 
 
-frameCallback :: Render State ()
-frameCallback = do
+renderCallback :: Render State ()
+renderCallback = do
     state <- getAppStateUnsafe
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT

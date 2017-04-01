@@ -28,7 +28,8 @@ main = do
                              , displayMode = SizedScreen (1024, 768)
                              , windowCaption = "Rotating Triangle"
                              , setup = setupCallback
-                             , eachFrame = frameCallback
+                             , animate = animateCallback
+                             , render = renderCallback
                              , teardown = teardownCallback
                              }
     result <- runEngine conf
@@ -41,7 +42,7 @@ setupCallback = do
         Right program' -> do
             mvpLoc' <- getUniformLocation program' "mvp"
             mesh' <- fromVectors StaticDraw vertices indices
-            (width, height) <- displayDimension
+            (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
 
@@ -59,8 +60,8 @@ setupCallback = do
 
         Left err -> return $ Left err
 
-frameCallback :: Render State ()
-frameCallback = do
+animateCallback :: Render State ()
+animateCallback = do
     frameTime <- frameDuration
     modifyAppState (\state ->
         let newRotation = (rotation state) + realToFrac frameTime * pi
@@ -68,6 +69,8 @@ frameCallback = do
         in state { rotation = newRotation, model = newModel }
         )
 
+renderCallback :: Render State ()
+renderCallback = do
     state <- getAppStateUnsafe
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT

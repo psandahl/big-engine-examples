@@ -14,7 +14,8 @@ main = do
                              , displayMode = SizedScreen (1024, 768)
                              , windowCaption = "Empty Window"
                              , setup = setupCallback
-                             , eachFrame = frameCallback
+                             , animate = return ()
+                             , render = renderCallback
                              , teardown = teardownCallback
                              }
     res <- runEngine conf
@@ -27,8 +28,8 @@ setupCallback = do
     setWindowSizeCallback (Just windowSizeCallback)
     return $ Right 1
 
-frameCallback :: Render Int ()
-frameCallback = do
+renderCallback :: Render Int ()
+renderCallback = do
     GL.glClear GL.GL_COLOR_BUFFER_BIT
     modifyAppState (+ 1)
 
@@ -40,7 +41,7 @@ teardownCallback = do
 
 windowSizeCallback :: Int -> Int -> Render Int ()
 windowSizeCallback width height = do
-    (width', height') <- displayDimension
+    (width', height') <- displayDimensions
     liftIO $ do
         printf "windowSizeCallback: (%d, %d) (%d, %d)\n" width height width' height'
         hFlush stdout
