@@ -1,15 +1,15 @@
 module Main where
 
-import           Control.Monad.IO.Class   (MonadIO, liftIO)
-import           Data.ByteString.Char8    as BS
-import           Data.Vector.Storable     (Vector, fromList)
+import           Control.Monad.IO.Class     (MonadIO, liftIO)
+import           Data.ByteString.Char8      as BS
+import           Data.Vector.Storable       (Vector, fromList)
 import           Graphics.Big
-import           Graphics.Big.Mesh.Vert_P (Vertex (..))
-import           Graphics.GL              (GLfloat, GLuint)
-import qualified Graphics.GL              as GL
-import           Linear                   (M44, V3 (..), axisAngle, lookAt,
-                                           mkTransformation, perspective, zero,
-                                           (!*!))
+import           Graphics.Big.Mesh.Vert_P_C (Vertex (..))
+import           Graphics.GL                (GLfloat, GLuint)
+import qualified Graphics.GL                as GL
+import           Linear                     (M44, V3 (..), V4 (..), axisAngle,
+                                             lookAt, mkTransformation,
+                                             perspective, zero, (!*!))
 
 data State = State
     { program  :: !Program
@@ -107,9 +107,9 @@ loadProgram = do
 vertices :: Vector Vertex
 vertices =
     fromList
-        [ Vertex { position = V3   0    1  0 }
-        , Vertex { position = V3 (-1) (-1) 0 }
-        , Vertex { position = V3   1  (-1) 0 }
+        [ Vertex { position = V3   0    1  0, color = V4 1 0 0 1 }
+        , Vertex { position = V3 (-1) (-1) 0, color = V4 0 1 0 1 }
+        , Vertex { position = V3   1  (-1) 0, color = V4 0 0 1 1 }
         ]
 
 indices :: Vector GLuint
