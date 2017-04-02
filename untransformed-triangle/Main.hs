@@ -35,7 +35,7 @@ setupCallback = do
     case eProg of
         Right prog -> do
             GL.glClearColor 0 0 0.4 0
-            mesh' <- fromVectors StaticDraw vertices indices
+            mesh' <- meshFromVectors StaticDraw vertices indices
             return $ Right State { program = prog, mesh = mesh' }
 
         Left err -> return $ Left err
@@ -66,7 +66,7 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
-    fromByteString
+    programFromByteStrings
         [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
         , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
         ]

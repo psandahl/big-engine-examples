@@ -41,7 +41,7 @@ setupCallback = do
     case eProgram of
         Right program' -> do
             mvpLoc' <- getUniformLocation program' "mvp"
-            mesh' <- fromVectors StaticDraw vertices indices
+            mesh' <- meshFromVectors StaticDraw vertices indices
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -99,7 +99,7 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "rotating-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "rotating-triangle/fragment.glsl"
-    fromByteString
+    programFromByteStrings
         [ (VertexShader, "rotating-triangle/vertex.glsl", vs)
         , (FragmentShader, "rotating-triangle/fragment.glsl", fs)
         ]
