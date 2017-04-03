@@ -72,7 +72,7 @@ animateCallback :: Render State ()
 animateCallback = do
     state <- getAppStateUnsafe
     duration <- realToFrac <$> frameDuration
-    let move = duration * range
+    let move = duration * range * 0.5
         state' = updateSkew move state
 
     let vectors = genVectors (skew state')
