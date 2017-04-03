@@ -14,12 +14,19 @@ import           Linear                   (M44, V3 (..), V4 (..), axisAngle,
                                            perspective, zero, (!*!))
 
 data State = State
-    { program :: !Program
-    , mvpLoc  :: !Location
-    , mesh    :: !Mesh
-    , persp   :: !(M44 GLfloat)
-    , view    :: !(M44 GLfloat)
+    { program   :: !Program
+    , mvpLoc    :: !Location
+    , mesh      :: !Mesh
+    , skew      :: !GLfloat
+    , direction :: !Direction
+    , persp     :: !(M44 GLfloat)
+    , view      :: !(M44 GLfloat)
     } deriving Show
+
+data Direction
+    = Forward
+    | Backward
+    deriving (Eq, Show)
 
 main :: IO ()
 main = do
@@ -40,8 +47,9 @@ setupCallback = do
     eProgram <- loadProgram
     case eProgram of
         Right program' -> do
+            let vectors = genVectors 0
             mvpLoc' <- getUniformLocation program' "mvp"
-            mesh' <- meshFromVectors StaticDraw (vertices 5 (pi / 8)) (indices 5)
+            mesh' <- meshFromVectors DynamicDraw (fst vectors) (snd vectors)
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -52,6 +60,8 @@ setupCallback = do
                 { program = program'
                 , mvpLoc = mvpLoc'
                 , mesh = mesh'
+                , skew = 0
+                , direction = Forward
                 , persp = makePerspective width height
                 , view = lookAt (V3 1 5 10) (V3 0 3 0) (V3 0 1 0)
                 }
@@ -59,7 +69,25 @@ setupCallback = do
         Left err -> return $ Left err
 
 animateCallback :: Render State ()
-animateCallback = return ()
+animateCallback = do
+    state <- getAppStateUnsafe
+    duration <- realToFrac <$> frameDuration
+    let move = duration * range
+        state' = updateSkew move state
+
+    let vectors = genVectors (skew state')
+    mesh' <- updateMesh (fst vectors) (snd vectors) (mesh state')
+
+    putAppState state' { mesh = mesh' }
+
+updateSkew :: GLfloat -> State -> State
+updateSkew move state
+    | skew state < right && direction state == Forward =
+        state { skew = skew state + move }
+    | skew state > left && direction state == Backward =
+        state { skew = skew state - move }
+    | direction state == Forward = state { direction = Backward }
+    | otherwise = state { direction = Forward }
 
 renderCallback :: Render State ()
 renderCallback = do
@@ -96,6 +124,9 @@ loadProgram = do
         , (FragmentShader, "dynamic-draw/fragment.glsl", fs)
         ]
 
+genVectors :: GLfloat -> (Vector Vertex, Vector GLuint)
+genVectors skew = (vertices 5 skew, indices 5)
+
 vertices :: Int -> GLfloat -> Vector Vertex
 vertices n skew = do
     Vector.generate (2 + 2 * n) $ \index ->
@@ -125,6 +156,15 @@ indices squares =
             in [idx' + 2, idx' + 3, idx' + 1, idx' + 2, idx' + 1, idx']
         )
         [0 .. (fromIntegral squares - 1)]
+
+range :: GLfloat
+range = pi / 2
+
+left :: GLfloat
+left = -(pi / 4)
+
+right :: GLfloat
+right = pi / 4
 
 makePerspective :: Int -> Int -> M44 GLfloat
 makePerspective width height =
