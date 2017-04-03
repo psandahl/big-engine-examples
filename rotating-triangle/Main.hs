@@ -1,7 +1,7 @@
 module Main where
 
 import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import           Data.ByteString.Char8      as BS
+import qualified Data.ByteString.Char8      as BS
 import           Data.Vector.Storable       (Vector, fromList)
 import           Graphics.Big
 import           Graphics.Big.Mesh.Vert_P_C (Vertex (..))
