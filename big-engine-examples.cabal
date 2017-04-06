@@ -57,3 +57,15 @@ executable dynamic-draw
                      , OpenGLRaw
                      , vector
   ghc-options:         -Wall -O2
+
+executable transparant-cat
+  hs-source-dirs:      transparant-cat
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , big-engine
+                     , bytestring
+                     , linear
+                     , OpenGLRaw
+                     , vector
+  ghc-options:         -Wall -O2
