@@ -8,5 +8,13 @@ out vec4 color;
 
 void main()
 {
-  color = texture2D(catTexture, vTexCoord);
+  vec4 pixel = texture2D(catTexture, vec2(vTexCoord.s, 1 - vTexCoord.t));
+  if (pixel.a < 0.5)
+  {
+    discard;
+  }
+  else
+  {
+    color = pixel;
+  }
 }

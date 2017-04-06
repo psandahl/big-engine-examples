@@ -49,7 +49,7 @@ setupCallback = do
                     mesh' <- meshFromVectors StaticDraw vertices indices
                     (width, height) <- displayDimensions
 
-                    GL.glClearColor 0 0 0.4 0
+                    GL.glClearColor 1 1 1 0
 
                     return $ Right State
                         { program = program'
