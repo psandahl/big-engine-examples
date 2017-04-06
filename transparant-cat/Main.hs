@@ -80,13 +80,12 @@ renderCallback = do
     let mvp = persp state !*! view state
     setUniform (mvpLoc state) mvp
 
-    let Texture handle = catTexture state
-    GL.glActiveTexture GL.GL_TEXTURE0
-    GL.glBindTexture GL.GL_TEXTURE_2D handle
+    bindTexture2D 0 (catTexture state)
     setUniform (catTextureLoc state) (0 :: GLint)
 
     renderMesh Triangles (mesh state)
 
+    disableTexture2D
     disableMesh
     disableProgram
 
@@ -94,6 +93,7 @@ teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
     deleteMesh (mesh state)
+    deleteTexture (catTexture state)
     deleteProgram (program state)
 
 loadProgram :: MonadIO m => m (Either String Program)
