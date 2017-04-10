@@ -1,6 +1,7 @@
 module Main where
 
 import           BigE.Attribute.Vert_P  (Vertex (..))
+import           BigE.Math              (toRadians)
 import           BigE.Mesh              (Mesh)
 import qualified BigE.Mesh              as Mesh
 import qualified BigE.Program           as Program
@@ -171,7 +172,4 @@ right = pi / 4
 
 makePerspective :: Int -> Int -> M44 GLfloat
 makePerspective width height =
-    perspective (degToRad 45) (fromIntegral width / fromIntegral height) 0.001 1000
-
-degToRad :: Floating a => a -> a
-degToRad d = d * (pi / 180)
+    perspective (toRadians 45) (fromIntegral width / fromIntegral height) 0.001 1000

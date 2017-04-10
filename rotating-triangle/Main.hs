@@ -1,6 +1,7 @@
 module Main where
 
 import           BigE.Attribute.Vert_P_C (Vertex (..))
+import           BigE.Math               (toRadians)
 import           BigE.Mesh               (Mesh)
 import qualified BigE.Mesh               as Mesh
 import qualified BigE.Program            as Program
@@ -121,10 +122,7 @@ indices = fromList [0, 1, 2]
 
 makePerspective :: Int -> Int -> M44 GLfloat
 makePerspective width height =
-    perspective (degToRad 45) (fromIntegral width / fromIntegral height) 0.001 1000
+    perspective (toRadians 45) (fromIntegral width / fromIntegral height) 0.001 1000
 
 makeRotation :: GLfloat -> M44 GLfloat
 makeRotation theta = mkTransformation (axisAngle (V3 0 1 0) theta) zero
-
-degToRad :: Floating a => a -> a
-degToRad d = d * (pi / 180)
