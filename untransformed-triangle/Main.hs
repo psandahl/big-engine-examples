@@ -1,13 +1,17 @@
 module Main where
 
-import           Control.Monad.IO.Class   (MonadIO, liftIO)
-import qualified Data.ByteString.Char8    as BS
-import           Data.Vector.Storable     (Vector, fromList)
-import           Graphics.Big
-import           Graphics.Big.Mesh.Vert_P (Vertex (..))
-import           Graphics.GL              (GLuint)
-import qualified Graphics.GL              as GL
-import           Linear                   (V3 (..))
+import           BigE.Attribute.Vert_P  (Vertex (..))
+import           BigE.MeshLoader        (Mesh)
+import qualified BigE.MeshLoader        as MeshLoader
+import qualified BigE.ProgramLoader     as ProgramLoader
+import           BigE.Runtime
+import           BigE.Types
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Data.ByteString.Char8  as BS
+import           Data.Vector.Storable   (Vector, fromList)
+import           Graphics.GL            (GLuint)
+import qualified Graphics.GL            as GL
+import           Linear                 (V3 (..))
 
 data State = State
     { program :: !Program
@@ -25,7 +29,7 @@ main = do
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
-    result <- runEngine conf
+    result <- runBigE conf
     print result
 
 setupCallback :: Render State (Either String State)
@@ -35,7 +39,7 @@ setupCallback = do
     case eProg of
         Right prog -> do
             GL.glClearColor 0 0 0.4 0
-            mesh' <- meshFromVectors StaticDraw vertices indices
+            mesh' <- MeshLoader.fromVector StaticDraw vertices indices
             return $ Right State { program = prog, mesh = mesh' }
 
         Left err -> return $ Left err
@@ -46,27 +50,26 @@ renderCallback = do
     state <- getAppStateUnsafe
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
-    enableProgram (program state)
-    enableMesh (mesh state)
+    ProgramLoader.enable (program state)
+    MeshLoader.enable (mesh state)
 
-    renderMesh Triangles (mesh state)
+    MeshLoader.render Triangles (mesh state)
 
-    disableMesh
-    disableProgram
-
+    MeshLoader.disable
+    ProgramLoader.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
 
-    deleteMesh (mesh state)
-    deleteProgram (program state)
+    MeshLoader.delete (mesh state)
+    ProgramLoader.delete (program state)
 
 loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
-    programFromByteStrings
+    ProgramLoader.fromByteString
         [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
         , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
         ]

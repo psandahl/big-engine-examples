@@ -1,7 +1,10 @@
 module Main where
 
+import           BigE.Runtime           (Configuration (..), DisplayMode (..),
+                                         Render, displayDimensions,
+                                         getAppStateUnsafe, modifyAppState,
+                                         runBigE, setWindowSizeCallback)
 import           Control.Monad.IO.Class (liftIO)
-import           Graphics.Big
 import qualified Graphics.GL            as GL
 
 import           System.IO              (hFlush, stdout)
@@ -18,7 +21,7 @@ main = do
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
-    res <- runEngine conf
+    res <- runBigE conf
     print res
 
 setupCallback :: Render Int (Either String Int)

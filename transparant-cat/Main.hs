@@ -1,14 +1,21 @@
 module Main where
 
-import           Control.Monad.IO.Class      (MonadIO, liftIO)
-import qualified Data.ByteString.Char8       as BS
-import           Data.Vector.Storable        (Vector, fromList)
-import           Graphics.Big
-import           Graphics.Big.Mesh.Vert_P_Tx (Vertex (..))
-import           Graphics.GL                 (GLfloat, GLint, GLuint)
-import qualified Graphics.GL                 as GL
-import           Linear                      (M44, V2 (..), V3 (..), lookAt,
-                                              perspective, (!*!))
+import           BigE.Attribute.Vert_P_Tx (Vertex (..))
+import           BigE.MeshLoader          (Mesh)
+import qualified BigE.MeshLoader          as MeshLoader
+import qualified BigE.ProgramLoader       as ProgramLoader
+import           BigE.Runtime
+import           BigE.TextureLoader       (TextureParameters (..),
+                                           defaultTextureParameters)
+import qualified BigE.TextureLoader       as TextureLoader
+import           BigE.Types
+import           Control.Monad.IO.Class   (MonadIO, liftIO)
+import qualified Data.ByteString.Char8    as BS
+import           Data.Vector.Storable     (Vector, fromList)
+import           Graphics.GL              (GLfloat, GLint, GLuint)
+import qualified Graphics.GL              as GL
+import           Linear                   (M44, V2 (..), V3 (..), lookAt,
+                                           perspective, (!*!))
 
 data State = State
     { program       :: !Program
@@ -31,7 +38,7 @@ main = do
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
-    result <- runEngine conf
+    result <- runBigE conf
     print result
 
 setupCallback :: Render State (Either String State)
@@ -40,13 +47,13 @@ setupCallback = do
     case eProgram of
         Right program' -> do
             eTexture <-
-                texture2DFromFile "transparant-cat/cat.png"
+                TextureLoader.fromFile2D "transparant-cat/cat.png"
                                   defaultTextureParameters { format = RGBA8 }
             case eTexture of
                 Right texture -> do
-                    mvpLoc' <- getUniformLocation program' "mvp"
-                    catTextureLoc' <- getUniformLocation program' "catTexture"
-                    mesh' <- meshFromVectors StaticDraw vertices indices
+                    mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
+                    catTextureLoc' <- ProgramLoader.getUniformLocation program' "catTexture"
+                    mesh' <- MeshLoader.fromVector StaticDraw vertices indices
                     (width, height) <- displayDimensions
 
                     GL.glClearColor 1 1 1 0
@@ -74,33 +81,33 @@ renderCallback = do
 
     state <- getAppStateUnsafe
 
-    enableProgram (program state)
-    enableMesh (mesh state)
+    ProgramLoader.enable (program state)
+    MeshLoader.enable (mesh state)
 
     let mvp = persp state !*! view state
     setUniform (mvpLoc state) mvp
 
-    bindTexture2D 0 (catTexture state)
+    TextureLoader.enable2D 0 (catTexture state)
     setUniform (catTextureLoc state) (0 :: GLint)
 
-    renderMesh Triangles (mesh state)
+    MeshLoader.render Triangles (mesh state)
 
-    disableTexture2D
-    disableMesh
-    disableProgram
+    TextureLoader.disable2D
+    MeshLoader.disable
+    ProgramLoader.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    deleteMesh (mesh state)
-    deleteTexture (catTexture state)
-    deleteProgram (program state)
+    MeshLoader.delete (mesh state)
+    TextureLoader.delete (catTexture state)
+    ProgramLoader.delete (program state)
 
 loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
         vs <- liftIO $ BS.readFile "transparant-cat/vertex.glsl"
         fs <- liftIO $ BS.readFile "transparant-cat/fragment.glsl"
-        programFromByteStrings
+        ProgramLoader.fromByteString
             [ (VertexShader, "transparant-cat/vertex.glsl", vs)
             , (FragmentShader, "transparant-cat/fragment.glsl", fs)
             ]

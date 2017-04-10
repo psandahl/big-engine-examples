@@ -1,17 +1,21 @@
 module Main where
 
-import           Control.Monad.IO.Class   (MonadIO, liftIO)
-import qualified Data.ByteString.Char8    as BS
-import           Data.List                (foldl')
-import           Data.Vector.Storable     (Vector)
-import qualified Data.Vector.Storable     as Vector
-import           Graphics.Big
-import           Graphics.Big.Mesh.Vert_P (Vertex (..))
-import           Graphics.GL              (GLfloat, GLuint)
-import qualified Graphics.GL              as GL
-import           Linear                   (M44, V3 (..), V4 (..), axisAngle,
-                                           lookAt, mkTransformation,
-                                           perspective, zero, (!*!))
+import           BigE.Attribute.Vert_P  (Vertex (..))
+import           BigE.MeshLoader        (Mesh)
+import qualified BigE.MeshLoader        as MeshLoader
+import qualified BigE.ProgramLoader     as ProgramLoader
+import           BigE.Runtime
+import           BigE.Types
+import           Control.Monad.IO.Class (MonadIO, liftIO)
+import qualified Data.ByteString.Char8  as BS
+import           Data.List              (foldl')
+import           Data.Vector.Storable   (Vector)
+import qualified Data.Vector.Storable   as Vector
+import           Graphics.GL            (GLfloat, GLuint)
+import qualified Graphics.GL            as GL
+import           Linear                 (M44, V3 (..), V4 (..), axisAngle,
+                                         lookAt, mkTransformation, perspective,
+                                         zero, (!*!))
 
 data State = State
     { program   :: !Program
@@ -39,7 +43,7 @@ main = do
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
-    result <- runEngine conf
+    result <- runBigE conf
     print result
 
 setupCallback :: Render State (Either String State)
@@ -48,8 +52,8 @@ setupCallback = do
     case eProgram of
         Right program' -> do
             let vectors = genVectors 0
-            mvpLoc' <- getUniformLocation program' "mvp"
-            mesh' <- meshFromVectors DynamicDraw (fst vectors) (snd vectors)
+            mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
+            mesh' <- MeshLoader.fromVector DynamicDraw (fst vectors) (snd vectors)
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -76,7 +80,7 @@ animateCallback = do
         state' = updateSkew move state
 
     let vectors = genVectors (skew state')
-    mesh' <- updateMesh (fst vectors) (snd vectors) (mesh state')
+    mesh' <- MeshLoader.update (fst vectors) (snd vectors) (mesh state')
 
     putAppState state' { mesh = mesh' }
 
@@ -95,21 +99,21 @@ renderCallback = do
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
-    enableProgram (program state)
-    enableMesh (mesh state)
+    ProgramLoader.enable (program state)
+    MeshLoader.enable (mesh state)
 
     let mvp = persp state !*! view state
     setUniform (mvpLoc state) mvp
-    renderMesh Triangles (mesh state)
+    MeshLoader.render Triangles (mesh state)
 
-    disableMesh
-    disableProgram
+    MeshLoader.disable
+    ProgramLoader.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    deleteMesh (mesh state)
-    deleteProgram (program state)
+    MeshLoader.delete (mesh state)
+    ProgramLoader.delete (program state)
 
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
@@ -119,7 +123,7 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "dynamic-draw/vertex.glsl"
     fs <- liftIO $ BS.readFile "dynamic-draw/fragment.glsl"
-    programFromByteStrings
+    ProgramLoader.fromByteString
         [ (VertexShader, "dynamic-draw/vertex.glsl", vs)
         , (FragmentShader, "dynamic-draw/fragment.glsl", fs)
         ]

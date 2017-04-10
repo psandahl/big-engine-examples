@@ -1,15 +1,19 @@
 module Main where
 
-import           Control.Monad.IO.Class     (MonadIO, liftIO)
-import qualified Data.ByteString.Char8      as BS
-import           Data.Vector.Storable       (Vector, fromList)
-import           Graphics.Big
-import           Graphics.Big.Mesh.Vert_P_C (Vertex (..))
-import           Graphics.GL                (GLfloat, GLuint)
-import qualified Graphics.GL                as GL
-import           Linear                     (M44, V3 (..), V4 (..), axisAngle,
-                                             lookAt, mkTransformation,
-                                             perspective, zero, (!*!))
+import           BigE.Attribute.Vert_P_C (Vertex (..))
+import           BigE.MeshLoader         (Mesh)
+import qualified BigE.MeshLoader         as MeshLoader
+import qualified BigE.ProgramLoader      as ProgramLoader
+import           BigE.Runtime
+import           BigE.Types
+import           Control.Monad.IO.Class  (MonadIO, liftIO)
+import qualified Data.ByteString.Char8   as BS
+import           Data.Vector.Storable    (Vector, fromList)
+import           Graphics.GL             (GLfloat, GLuint)
+import qualified Graphics.GL             as GL
+import           Linear                  (M44, V3 (..), V4 (..), axisAngle,
+                                          lookAt, mkTransformation, perspective,
+                                          zero, (!*!))
 
 data State = State
     { program  :: !Program
@@ -32,7 +36,7 @@ main = do
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
-    result <- runEngine conf
+    result <- runBigE conf
     print result
 
 setupCallback :: Render State (Either String State)
@@ -40,8 +44,8 @@ setupCallback = do
     eProgram <- loadProgram
     case eProgram of
         Right program' -> do
-            mvpLoc' <- getUniformLocation program' "mvp"
-            mesh' <- meshFromVectors StaticDraw vertices indices
+            mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
+            mesh' <- MeshLoader.fromVector StaticDraw vertices indices
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -75,21 +79,21 @@ renderCallback = do
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
-    enableProgram (program state)
-    enableMesh (mesh state)
+    ProgramLoader.enable (program state)
+    MeshLoader.enable (mesh state)
 
     let mvp = persp state !*! view state !*! model state
     setUniform (mvpLoc state) mvp
-    renderMesh Triangles (mesh state)
+    MeshLoader.render Triangles (mesh state)
 
-    disableMesh
-    disableProgram
+    MeshLoader.disable
+    ProgramLoader.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    deleteMesh (mesh state)
-    deleteProgram (program state)
+    MeshLoader.delete (mesh state)
+    ProgramLoader.delete (program state)
 
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
@@ -99,7 +103,7 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "rotating-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "rotating-triangle/fragment.glsl"
-    programFromByteStrings
+    ProgramLoader.fromByteString
         [ (VertexShader, "rotating-triangle/vertex.glsl", vs)
         , (FragmentShader, "rotating-triangle/fragment.glsl", fs)
         ]
