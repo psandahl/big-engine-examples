@@ -8,7 +8,6 @@ import qualified BigE.Program            as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
-import qualified Data.ByteString.Char8   as BS
 import           Data.Vector.Storable    (Vector, fromList)
 import           Graphics.GL             (GLfloat, GLuint)
 import qualified Graphics.GL             as GL
@@ -42,7 +41,10 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    eProgram <- loadProgram
+    eProgram <- Program.fromFile
+                    [ (VertexShader, "rotating-triangle/vertex.glsl")
+                    , (FragmentShader, "rotating-triangle/fragment.glsl")
+                    ]
     case eProgram of
         Right program' -> do
             mvpLoc' <- Program.getUniformLocation program' "mvp"
@@ -99,15 +101,6 @@ teardownCallback = do
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
     modifyAppState (\state -> state { persp = makePerspective width height })
-
-loadProgram :: MonadIO m => m (Either String Program)
-loadProgram = do
-    vs <- liftIO $ BS.readFile "rotating-triangle/vertex.glsl"
-    fs <- liftIO $ BS.readFile "rotating-triangle/fragment.glsl"
-    Program.fromByteString
-        [ (VertexShader, "rotating-triangle/vertex.glsl", vs)
-        , (FragmentShader, "rotating-triangle/fragment.glsl", fs)
-        ]
 
 vertices :: Vector Vertex
 vertices =

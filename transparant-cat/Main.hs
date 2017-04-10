@@ -11,7 +11,6 @@ import           BigE.Texture             (TextureParameters (..),
 import qualified BigE.Texture             as Texture
 import           BigE.Types
 import           Control.Monad.IO.Class   (MonadIO, liftIO)
-import qualified Data.ByteString.Char8    as BS
 import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.GL              (GLfloat, GLint, GLuint)
 import qualified Graphics.GL              as GL
@@ -44,7 +43,10 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    eProgram <- loadProgram
+    eProgram <- Program.fromFile
+                    [ (VertexShader, "transparant-cat/vertex.glsl")
+                    , (FragmentShader, "transparant-cat/fragment.glsl")
+                    ]
     case eProgram of
         Right program' -> do
             eTexture <-
@@ -103,15 +105,6 @@ teardownCallback = do
     Mesh.delete (mesh state)
     Texture.delete (catTexture state)
     Program.delete (program state)
-
-loadProgram :: MonadIO m => m (Either String Program)
-loadProgram = do
-        vs <- liftIO $ BS.readFile "transparant-cat/vertex.glsl"
-        fs <- liftIO $ BS.readFile "transparant-cat/fragment.glsl"
-        Program.fromByteString
-            [ (VertexShader, "transparant-cat/vertex.glsl", vs)
-            , (FragmentShader, "transparant-cat/fragment.glsl", fs)
-            ]
 
 vertices :: Vector Vertex
 vertices =

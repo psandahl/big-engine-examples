@@ -8,7 +8,6 @@ import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import qualified Data.ByteString.Char8  as BS
 import           Data.List              (foldl')
 import           Data.Vector.Storable   (Vector)
 import qualified Data.Vector.Storable   as Vector
@@ -48,7 +47,10 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    eProgram <- loadProgram
+    eProgram <- Program.fromFile
+                   [ (VertexShader, "dynamic-draw/vertex.glsl")
+                   , (FragmentShader, "dynamic-draw/fragment.glsl")
+                   ]
     case eProgram of
         Right program' -> do
             let vectors = genVectors 0
@@ -118,15 +120,6 @@ teardownCallback = do
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
     modifyAppState (\state -> state { persp = makePerspective width height })
-
-loadProgram :: MonadIO m => m (Either String Program)
-loadProgram = do
-    vs <- liftIO $ BS.readFile "dynamic-draw/vertex.glsl"
-    fs <- liftIO $ BS.readFile "dynamic-draw/fragment.glsl"
-    Program.fromByteString
-        [ (VertexShader, "dynamic-draw/vertex.glsl", vs)
-        , (FragmentShader, "dynamic-draw/fragment.glsl", fs)
-        ]
 
 genVectors :: GLfloat -> (Vector Vertex, Vector GLuint)
 genVectors skew' = (vertices 5 skew', indices 5)

@@ -7,7 +7,6 @@ import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class (MonadIO, liftIO)
-import qualified Data.ByteString.Char8  as BS
 import           Data.Vector.Storable   (Vector, fromList)
 import           Graphics.GL            (GLuint)
 import qualified Graphics.GL            as GL
@@ -34,7 +33,10 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    eProg <- loadProgram
+    eProg <- Program.fromFile
+                 [ (VertexShader, "untransformed-triangle/vertex.glsl")
+                 , (FragmentShader, "untransformed-triangle/fragment.glsl")
+                 ]
 
     case eProg of
         Right prog -> do
@@ -61,18 +63,8 @@ renderCallback = do
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-
     Mesh.delete (mesh state)
     Program.delete (program state)
-
-loadProgram :: MonadIO m => m (Either String Program)
-loadProgram = do
-    vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
-    fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
-    Program.fromByteString
-        [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
-        , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
-        ]
 
 vertices :: Vector Vertex
 vertices =
