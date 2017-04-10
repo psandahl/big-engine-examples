@@ -1,9 +1,9 @@
 module Main where
 
 import           BigE.Attribute.Vert_P  (Vertex (..))
-import           BigE.MeshLoader        (Mesh)
-import qualified BigE.MeshLoader        as MeshLoader
-import qualified BigE.ProgramLoader     as ProgramLoader
+import           BigE.Mesh              (Mesh)
+import qualified BigE.Mesh              as Mesh
+import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class (MonadIO, liftIO)
@@ -13,9 +13,8 @@ import           Data.Vector.Storable   (Vector)
 import qualified Data.Vector.Storable   as Vector
 import           Graphics.GL            (GLfloat, GLuint)
 import qualified Graphics.GL            as GL
-import           Linear                 (M44, V3 (..), V4 (..), axisAngle,
-                                         lookAt, mkTransformation, perspective,
-                                         zero, (!*!))
+import           Linear                 (M44, V3 (..), lookAt, perspective,
+                                         (!*!))
 
 data State = State
     { program   :: !Program
@@ -52,8 +51,8 @@ setupCallback = do
     case eProgram of
         Right program' -> do
             let vectors = genVectors 0
-            mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
-            mesh' <- MeshLoader.fromVector DynamicDraw (fst vectors) (snd vectors)
+            mvpLoc' <- Program.getUniformLocation program' "mvp"
+            mesh' <- Mesh.fromVector DynamicDraw (fst vectors) (snd vectors)
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -80,7 +79,7 @@ animateCallback = do
         state' = updateSkew move state
 
     let vectors = genVectors (skew state')
-    mesh' <- MeshLoader.update (fst vectors) (snd vectors) (mesh state')
+    mesh' <- Mesh.update (fst vectors) (snd vectors) (mesh state')
 
     putAppState state' { mesh = mesh' }
 
@@ -99,21 +98,21 @@ renderCallback = do
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
-    ProgramLoader.enable (program state)
-    MeshLoader.enable (mesh state)
+    Program.enable (program state)
+    Mesh.enable (mesh state)
 
     let mvp = persp state !*! view state
     setUniform (mvpLoc state) mvp
-    MeshLoader.render Triangles (mesh state)
+    Mesh.render Triangles (mesh state)
 
-    MeshLoader.disable
-    ProgramLoader.disable
+    Mesh.disable
+    Program.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    MeshLoader.delete (mesh state)
-    ProgramLoader.delete (program state)
+    Mesh.delete (mesh state)
+    Program.delete (program state)
 
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
@@ -123,20 +122,20 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "dynamic-draw/vertex.glsl"
     fs <- liftIO $ BS.readFile "dynamic-draw/fragment.glsl"
-    ProgramLoader.fromByteString
+    Program.fromByteString
         [ (VertexShader, "dynamic-draw/vertex.glsl", vs)
         , (FragmentShader, "dynamic-draw/fragment.glsl", fs)
         ]
 
 genVectors :: GLfloat -> (Vector Vertex, Vector GLuint)
-genVectors skew = (vertices 5 skew, indices 5)
+genVectors skew' = (vertices 5 skew', indices 5)
 
 vertices :: Int -> GLfloat -> Vector Vertex
-vertices n skew = do
+vertices n skew' = do
     Vector.generate (2 + 2 * n) $ \index ->
         let y = yFromIndex index
             reduxFactor = n - round y
-            reducedSkew = repeatedHalf reduxFactor skew
+            reducedSkew = repeatedHalf reduxFactor skew'
         in
             if even index
                 then Vertex {position = V3 (sin reducedSkew * y) (cos reducedSkew * y) (-0.5)}

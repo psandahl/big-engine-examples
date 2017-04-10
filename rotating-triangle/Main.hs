@@ -1,9 +1,9 @@
 module Main where
 
 import           BigE.Attribute.Vert_P_C (Vertex (..))
-import           BigE.MeshLoader         (Mesh)
-import qualified BigE.MeshLoader         as MeshLoader
-import qualified BigE.ProgramLoader      as ProgramLoader
+import           BigE.Mesh               (Mesh)
+import qualified BigE.Mesh               as Mesh
+import qualified BigE.Program            as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class  (MonadIO, liftIO)
@@ -44,8 +44,8 @@ setupCallback = do
     eProgram <- loadProgram
     case eProgram of
         Right program' -> do
-            mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
-            mesh' <- MeshLoader.fromVector StaticDraw vertices indices
+            mvpLoc' <- Program.getUniformLocation program' "mvp"
+            mesh' <- Mesh.fromVector StaticDraw vertices indices
             (width, height) <- displayDimensions
 
             setWindowSizeCallback (Just windowSizeCallback)
@@ -79,21 +79,21 @@ renderCallback = do
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
-    ProgramLoader.enable (program state)
-    MeshLoader.enable (mesh state)
+    Program.enable (program state)
+    Mesh.enable (mesh state)
 
     let mvp = persp state !*! view state !*! model state
     setUniform (mvpLoc state) mvp
-    MeshLoader.render Triangles (mesh state)
+    Mesh.render Triangles (mesh state)
 
-    MeshLoader.disable
-    ProgramLoader.disable
+    Mesh.disable
+    Program.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    MeshLoader.delete (mesh state)
-    ProgramLoader.delete (program state)
+    Mesh.delete (mesh state)
+    Program.delete (program state)
 
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
@@ -103,7 +103,7 @@ loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "rotating-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "rotating-triangle/fragment.glsl"
-    ProgramLoader.fromByteString
+    Program.fromByteString
         [ (VertexShader, "rotating-triangle/vertex.glsl", vs)
         , (FragmentShader, "rotating-triangle/fragment.glsl", fs)
         ]

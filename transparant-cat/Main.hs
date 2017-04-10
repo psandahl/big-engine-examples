@@ -1,13 +1,13 @@
 module Main where
 
 import           BigE.Attribute.Vert_P_Tx (Vertex (..))
-import           BigE.MeshLoader          (Mesh)
-import qualified BigE.MeshLoader          as MeshLoader
-import qualified BigE.ProgramLoader       as ProgramLoader
+import           BigE.Mesh                (Mesh)
+import qualified BigE.Mesh                as Mesh
+import qualified BigE.Program             as Program
 import           BigE.Runtime
-import           BigE.TextureLoader       (TextureParameters (..),
+import           BigE.Texture             (TextureParameters (..),
                                            defaultTextureParameters)
-import qualified BigE.TextureLoader       as TextureLoader
+import qualified BigE.Texture             as Texture
 import           BigE.Types
 import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import qualified Data.ByteString.Char8    as BS
@@ -47,13 +47,13 @@ setupCallback = do
     case eProgram of
         Right program' -> do
             eTexture <-
-                TextureLoader.fromFile2D "transparant-cat/cat.png"
-                                  defaultTextureParameters { format = RGBA8 }
+                Texture.fromFile2D "transparant-cat/cat.png"
+                                   defaultTextureParameters { format = RGBA8 }
             case eTexture of
                 Right texture -> do
-                    mvpLoc' <- ProgramLoader.getUniformLocation program' "mvp"
-                    catTextureLoc' <- ProgramLoader.getUniformLocation program' "catTexture"
-                    mesh' <- MeshLoader.fromVector StaticDraw vertices indices
+                    mvpLoc' <- Program.getUniformLocation program' "mvp"
+                    catTextureLoc' <- Program.getUniformLocation program' "catTexture"
+                    mesh' <- Mesh.fromVector StaticDraw vertices indices
                     (width, height) <- displayDimensions
 
                     GL.glClearColor 1 1 1 0
@@ -81,33 +81,33 @@ renderCallback = do
 
     state <- getAppStateUnsafe
 
-    ProgramLoader.enable (program state)
-    MeshLoader.enable (mesh state)
+    Program.enable (program state)
+    Mesh.enable (mesh state)
 
     let mvp = persp state !*! view state
     setUniform (mvpLoc state) mvp
 
-    TextureLoader.enable2D 0 (catTexture state)
+    Texture.enable2D 0 (catTexture state)
     setUniform (catTextureLoc state) (0 :: GLint)
 
-    MeshLoader.render Triangles (mesh state)
+    Mesh.render Triangles (mesh state)
 
-    TextureLoader.disable2D
-    MeshLoader.disable
-    ProgramLoader.disable
+    Texture.disable2D
+    Mesh.disable
+    Program.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
-    MeshLoader.delete (mesh state)
-    TextureLoader.delete (catTexture state)
-    ProgramLoader.delete (program state)
+    Mesh.delete (mesh state)
+    Texture.delete (catTexture state)
+    Program.delete (program state)
 
 loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
         vs <- liftIO $ BS.readFile "transparant-cat/vertex.glsl"
         fs <- liftIO $ BS.readFile "transparant-cat/fragment.glsl"
-        ProgramLoader.fromByteString
+        Program.fromByteString
             [ (VertexShader, "transparant-cat/vertex.glsl", vs)
             , (FragmentShader, "transparant-cat/fragment.glsl", fs)
             ]

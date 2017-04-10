@@ -1,9 +1,9 @@
 module Main where
 
 import           BigE.Attribute.Vert_P  (Vertex (..))
-import           BigE.MeshLoader        (Mesh)
-import qualified BigE.MeshLoader        as MeshLoader
-import qualified BigE.ProgramLoader     as ProgramLoader
+import           BigE.Mesh              (Mesh)
+import qualified BigE.Mesh              as Mesh
+import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.Types
 import           Control.Monad.IO.Class (MonadIO, liftIO)
@@ -39,7 +39,7 @@ setupCallback = do
     case eProg of
         Right prog -> do
             GL.glClearColor 0 0 0.4 0
-            mesh' <- MeshLoader.fromVector StaticDraw vertices indices
+            mesh' <- Mesh.fromVector StaticDraw vertices indices
             return $ Right State { program = prog, mesh = mesh' }
 
         Left err -> return $ Left err
@@ -50,26 +50,26 @@ renderCallback = do
     state <- getAppStateUnsafe
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
-    ProgramLoader.enable (program state)
-    MeshLoader.enable (mesh state)
+    Program.enable (program state)
+    Mesh.enable (mesh state)
 
-    MeshLoader.render Triangles (mesh state)
+    Mesh.render Triangles (mesh state)
 
-    MeshLoader.disable
-    ProgramLoader.disable
+    Mesh.disable
+    Program.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
 
-    MeshLoader.delete (mesh state)
-    ProgramLoader.delete (program state)
+    Mesh.delete (mesh state)
+    Program.delete (program state)
 
 loadProgram :: MonadIO m => m (Either String Program)
 loadProgram = do
     vs <- liftIO $ BS.readFile "untransformed-triangle/vertex.glsl"
     fs <- liftIO $ BS.readFile "untransformed-triangle/fragment.glsl"
-    ProgramLoader.fromByteString
+    Program.fromByteString
         [ (VertexShader, "untransformed-triangle/vertex.glsl", vs)
         , (FragmentShader, "untransformed-triangle/fragment.glsl", fs)
         ]
