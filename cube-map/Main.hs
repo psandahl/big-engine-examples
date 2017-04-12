@@ -12,17 +12,19 @@ import           BigE.Types
 import           Data.Vector.Storable  (Vector, fromList)
 import           Graphics.GL           (GLfloat, GLuint)
 import qualified Graphics.GL           as GL
-import           Linear                (M44, V3 (..), identity, lookAt,
-                                        perspective, (!*!))
+import           Linear                (M44, V3 (..), axisAngle, lookAt,
+                                        mkTransformation, perspective, zero,
+                                        (!*!))
 
 data State = State
-    { program  :: !Program
-    , vpLoc    :: !Location
-    , modelLoc :: !Location
-    , mesh     :: !Mesh
-    , persp    :: !(M44 GLfloat)
-    , view     :: !(M44 GLfloat)
-    , model    :: !(M44 GLfloat)
+    { program      :: !Program
+    , vpLoc        :: !Location
+    , modelLoc     :: !Location
+    , mesh         :: !Mesh
+    , persp        :: !(M44 GLfloat)
+    , view         :: !(M44 GLfloat)
+    , cubeRotation :: !GLfloat
+    , model        :: !(M44 GLfloat)
     } deriving Show
 
 main :: IO ()
@@ -65,13 +67,20 @@ setupCallback = do
                 , mesh = mesh'
                 , persp = makePerspective width height
                 , view = lookAt (V3 0 0 5) (V3 0 0 (-1)) (V3 0 1 0)
-                , model = identity
+                , cubeRotation = 0
+                , model = makeRotation 0
                 }
 
         Left err -> return $ Left err
 
 animateCallback :: Render State ()
-animateCallback = return ()
+animateCallback = do
+    duration <- frameDuration
+    modifyAppState $ \state ->
+        let newRotation = (realToFrac duration) * 0.05 * pi + (cubeRotation state)
+        in state { cubeRotation = newRotation
+                 , model = makeRotation newRotation
+                 }
 
 renderCallback :: Render State ()
 renderCallback = do
@@ -120,3 +129,7 @@ indices =
 makePerspective :: Int -> Int -> M44 GLfloat
 makePerspective width height =
     perspective (toRadians 45) (fromIntegral width / fromIntegral height) 0.001 1000
+
+
+makeRotation :: GLfloat -> M44 GLfloat
+makeRotation theta = mkTransformation (axisAngle (V3 0 1 0) theta) zero
