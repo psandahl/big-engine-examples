@@ -9,6 +9,7 @@ out vec3 vTexCoord;
 
 void main()
 {
-  vTexCoord = (model * vec4(position, 1.0)).xyz; 
+  vTexCoord = (model * vec4(position, 1.0)).xyz;
+  //vTexCoord = position;
   gl_Position = vp * model * vec4(position, 1.0);
 }

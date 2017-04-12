@@ -6,7 +6,7 @@ import           BigE.Mesh             (Mesh)
 import qualified BigE.Mesh             as Mesh
 import qualified BigE.Program          as Program
 import           BigE.Runtime
-import           BigE.Texture          (TextureParameters (..), defaultParams2D)
+import           BigE.Texture          (CubeMapFiles (..), defaultParamsCube)
 import qualified BigE.Texture          as Texture
 import           BigE.Types
 import           Data.Vector.Storable  (Vector, fromList)
@@ -17,14 +17,16 @@ import           Linear                (M44, V3 (..), axisAngle, lookAt,
                                         (!*!))
 
 data State = State
-    { program      :: !Program
-    , vpLoc        :: !Location
-    , modelLoc     :: !Location
-    , mesh         :: !Mesh
-    , persp        :: !(M44 GLfloat)
-    , view         :: !(M44 GLfloat)
-    , cubeRotation :: !GLfloat
-    , model        :: !(M44 GLfloat)
+    { program        :: !Program
+    , vpLoc          :: !Location
+    , modelLoc       :: !Location
+    , cubeTextureLoc :: !Location
+    , mesh           :: !Mesh
+    , cubeTexture    :: !Texture
+    , persp          :: !(M44 GLfloat)
+    , view           :: !(M44 GLfloat)
+    , cubeRotation   :: !GLfloat
+    , model          :: !(M44 GLfloat)
     } deriving Show
 
 main :: IO ()
@@ -49,27 +51,44 @@ setupCallback = do
                     ]
 
     case eProgram of
-
         Right program' -> do
-            vpLoc' <- Program.getUniformLocation program' "vp"
-            modelLoc' <- Program.getUniformLocation program' "model"
-            mesh' <- Mesh.fromVector StaticDraw vertices indices
-            (width, height) <- displayDimensions
 
-            setWindowSizeCallback $ Just windowSizeCallback
+            let files = CubeMapFiles { negativeX = "cube-map/left.png"
+                                     , positiveX = "cube-map/right.png"
+                                     , negativeY = "cube-map/bottom.png"
+                                     , positiveY = "cube-map/top.png"
+                                     , negativeZ = "cube-map/front.png"
+                                     , positiveZ = "cube-map/back.png"
+                                     }
+            eTexture <- Texture.fromFileCube files defaultParamsCube
+            case eTexture of
 
-            GL.glClearColor 1 1 1 0
+                Right texture -> do
 
-            return $ Right State
-                { program = program'
-                , vpLoc = vpLoc'
-                , modelLoc = modelLoc'
-                , mesh = mesh'
-                , persp = makePerspective width height
-                , view = lookAt (V3 0 0 5) (V3 0 0 (-1)) (V3 0 1 0)
-                , cubeRotation = 0
-                , model = makeRotation 0
-                }
+                    vpLoc' <- Program.getUniformLocation program' "vp"
+                    modelLoc' <- Program.getUniformLocation program' "model"
+                    cubeTextureLoc' <- Program.getUniformLocation program' "cube"
+                    mesh' <- Mesh.fromVector StaticDraw vertices indices
+                    (width, height) <- displayDimensions
+
+                    setWindowSizeCallback $ Just windowSizeCallback
+
+                    GL.glClearColor 1 1 1 0
+
+                    return $ Right State
+                        { program = program'
+                        , vpLoc = vpLoc'
+                        , modelLoc = modelLoc'
+                        , cubeTextureLoc = cubeTextureLoc'
+                        , mesh = mesh'
+                        , cubeTexture = texture
+                        , persp = makePerspective width height
+                        , view = lookAt (V3 0 0 5) (V3 0 0 (-1)) (V3 0 1 0)
+                        , cubeRotation = 0
+                        , model = makeRotation 0
+                        }
+
+                Left err -> return $ Left err
 
         Left err -> return $ Left err
 
