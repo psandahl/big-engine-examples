@@ -69,3 +69,14 @@ executable transparant-cat
                      , OpenGLRaw
                      , vector
   ghc-options:         -Wall -O2
+
+executable cube-map
+  hs-source-dirs:      cube-map
+  main-is:             Main.hs
+  default-language:    Haskell2010
+  build-depends:       base >= 4.7 && < 5
+                     , big-engine
+                     , linear
+                     , OpenGLRaw
+                     , vector
+  ghc-options:         -Wall -O2
