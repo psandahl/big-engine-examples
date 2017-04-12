@@ -7,7 +7,7 @@ import qualified BigE.Mesh                as Mesh
 import qualified BigE.Program             as Program
 import           BigE.Runtime
 import           BigE.Texture             (TextureParameters (..),
-                                           defaultTextureParameters)
+                                           defaultParams2D)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
 import           Control.Monad.IO.Class   (MonadIO, liftIO)
@@ -51,13 +51,15 @@ setupCallback = do
         Right program' -> do
             eTexture <-
                 Texture.fromFile2D "transparant-cat/cat.png"
-                                   defaultTextureParameters { format = RGBA8 }
+                                   defaultParams2D { format = RGBA8 }
             case eTexture of
                 Right texture -> do
                     mvpLoc' <- Program.getUniformLocation program' "mvp"
                     catTextureLoc' <- Program.getUniformLocation program' "catTexture"
                     mesh' <- Mesh.fromVector StaticDraw vertices indices
                     (width, height) <- displayDimensions
+
+                    setWindowSizeCallback $ Just windowSizeCallback
 
                     GL.glClearColor 1 1 1 0
 
@@ -95,7 +97,7 @@ renderCallback = do
 
     Mesh.render Triangles (mesh state)
 
-    Texture.disable2D
+    Texture.disable2D 0
     Mesh.disable
     Program.disable
 
@@ -105,6 +107,10 @@ teardownCallback = do
     Mesh.delete (mesh state)
     Texture.delete (catTexture state)
     Program.delete (program state)
+
+windowSizeCallback :: Int -> Int -> Render State ()
+windowSizeCallback width height =
+    modifyAppState (\state -> state { persp = makePerspective width height })
 
 vertices :: Vector Vertex
 vertices =
