@@ -9,6 +9,7 @@ import           BigE.Runtime
 import           BigE.Texture          (CubeMapFiles (..), defaultParamsCube)
 import qualified BigE.Texture          as Texture
 import           BigE.Types
+import           Data.Bits             ((.|.))
 import           Data.Vector.Storable  (Vector, fromList)
 import           Graphics.GL           (GLfloat, GLuint)
 import qualified Graphics.GL           as GL
@@ -53,12 +54,12 @@ setupCallback = do
     case eProgram of
         Right program' -> do
 
-            let files = CubeMapFiles { negativeX = "cube-map/left.png"
-                                     , positiveX = "cube-map/right.png"
+            let files = CubeMapFiles { negativeX = "cube-map/right.png"
+                                     , positiveX = "cube-map/left.png"
                                      , negativeY = "cube-map/bottom.png"
                                      , positiveY = "cube-map/top.png"
-                                     , negativeZ = "cube-map/front.png"
-                                     , positiveZ = "cube-map/back.png"
+                                     , negativeZ = "cube-map/back.png"
+                                     , positiveZ = "cube-map/front.png"
                                      }
             eTexture <- Texture.fromFileCube files defaultParamsCube
             case eTexture of
@@ -68,12 +69,13 @@ setupCallback = do
                     vpLoc' <- Program.getUniformLocation program' "vp"
                     modelLoc' <- Program.getUniformLocation program' "model"
                     cubeTextureLoc' <- Program.getUniformLocation program' "cube"
-                    mesh' <- Mesh.fromVector StaticDraw vertices indices
+                    mesh' <- Mesh.fromVector StaticDraw (vertices 1) indices
                     (width, height) <- displayDimensions
 
                     setWindowSizeCallback $ Just windowSizeCallback
 
                     GL.glClearColor 1 1 1 0
+                    GL.glEnable GL.GL_DEPTH
 
                     return $ Right State
                         { program = program'
@@ -83,9 +85,9 @@ setupCallback = do
                         , mesh = mesh'
                         , cubeTexture = texture
                         , persp = makePerspective width height
-                        , view = lookAt (V3 0 0 5) (V3 0 0 (-1)) (V3 0 1 0)
+                        , view = lookAt (V3 0 0 3) (V3 0 0 (-1)) (V3 0 1 0)
                         , cubeRotation = 0
-                        , model = makeRotation 0
+                        , model = makeRotation (-(pi / 8))
                         }
 
                 Left err -> return $ Left err
@@ -93,17 +95,17 @@ setupCallback = do
         Left err -> return $ Left err
 
 animateCallback :: Render State ()
-animateCallback = do
-    duration <- frameDuration
-    modifyAppState $ \state ->
-        let newRotation = (realToFrac duration) * 0.05 * pi + (cubeRotation state)
-        in state { cubeRotation = newRotation
-                 , model = makeRotation newRotation
-                 }
+animateCallback = return ()
+    -- duration <- frameDuration
+    -- modifyAppState $ \state ->
+    --     let newRotation = (realToFrac duration) * 0.05 * pi + (cubeRotation state)
+    --     in state { cubeRotation = newRotation
+    --              , model = makeRotation newRotation
+    --              }
 
 renderCallback :: Render State ()
 renderCallback = do
-    GL.glClear GL.GL_COLOR_BUFFER_BIT
+    GL.glClear (GL.GL_COLOR_BUFFER_BIT .|. GL.GL_DEPTH_BUFFER_BIT)
 
     state <- getAppStateUnsafe
 
@@ -129,13 +131,17 @@ windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
     modifyAppState (\state -> state { persp = makePerspective width height })
 
-vertices :: Vector Vertex
-vertices =
+vertices :: GLfloat -> Vector Vertex
+vertices width =
     fromList
-        [ Vertex { position = V3   1    1  (-1) }
-        , Vertex { position = V3 (-1)   1  (-1) }
-        , Vertex { position = V3 (-1) (-1) (-1) }
-        , Vertex { position = V3   1  (-1) (-1) }
+        [ Vertex { position = V3   width    width  (-width) }
+        , Vertex { position = V3 (-width)   width  (-width) }
+        , Vertex { position = V3 (-width) (-width) (-width) }
+        , Vertex { position = V3   width  (-width) (-width) }
+        , Vertex { position = V3   width    width    width }
+        , Vertex { position = V3 (-width)   width    width }
+        , Vertex { position = V3 (-width) (-width)   width }
+        , Vertex { position = V3   width  (-width)   width }
         ]
 
 indices :: Vector GLuint
@@ -143,6 +149,12 @@ indices =
     fromList
         [ -- Negative z
           0, 1, 2, 0, 2, 3
+          -- Negative x
+        , 1, 5, 6, 1, 6, 2
+          -- Positive x
+        , 4, 0, 3, 4, 3, 7
+          -- Positive y
+        , 0, 1, 4, 1, 4, 5
         ]
 
 makePerspective :: Int -> Int -> M44 GLfloat
