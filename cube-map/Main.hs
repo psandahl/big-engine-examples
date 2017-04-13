@@ -6,7 +6,7 @@ import           BigE.Mesh             (Mesh)
 import qualified BigE.Mesh             as Mesh
 import qualified BigE.Program          as Program
 import           BigE.Runtime
-import           BigE.Texture          (CubeMapFiles (..), defaultParamsCube)
+import           BigE.Texture          (CubeMapFiles (..))
 import qualified BigE.Texture          as Texture
 import           BigE.Types
 import           Data.Bits             ((.|.))
@@ -19,8 +19,7 @@ import           Linear                (M44, V3 (..), axisAngle, lookAt,
 
 data State = State
     { program        :: !Program
-    , vpLoc          :: !Location
-    , modelLoc       :: !Location
+    , mvpLoc         :: !Location
     , cubeTextureLoc :: !Location
     , mesh           :: !Mesh
     , cubeTexture    :: !Texture
@@ -61,13 +60,12 @@ setupCallback = do
                                      , negativeZ = "cube-map/back.png"
                                      , positiveZ = "cube-map/front.png"
                                      }
-            eTexture <- Texture.fromFileCube files defaultParamsCube
+            eTexture <- Texture.fromFileCube files RGB8
             case eTexture of
 
                 Right texture -> do
 
-                    vpLoc' <- Program.getUniformLocation program' "vp"
-                    modelLoc' <- Program.getUniformLocation program' "model"
+                    mvpLoc' <- Program.getUniformLocation program' "mvp"
                     cubeTextureLoc' <- Program.getUniformLocation program' "cube"
                     mesh' <- Mesh.fromVector StaticDraw (vertices 1) indices
                     (width, height) <- displayDimensions
@@ -79,8 +77,7 @@ setupCallback = do
 
                     return $ Right State
                         { program = program'
-                        , vpLoc = vpLoc'
-                        , modelLoc = modelLoc'
+                        , mvpLoc = mvpLoc'
                         , cubeTextureLoc = cubeTextureLoc'
                         , mesh = mesh'
                         , cubeTexture = texture
@@ -112,9 +109,8 @@ renderCallback = do
     Program.enable (program state)
     Mesh.enable (mesh state)
 
-    let vp = persp state !*! view state
-    setUniform (vpLoc state) vp
-    setUniform (modelLoc state) (model state)
+    let mvp = persp state !*! view state !*! model state
+    setUniform (mvpLoc state) mvp
 
     Mesh.render Triangles (mesh state)
 
