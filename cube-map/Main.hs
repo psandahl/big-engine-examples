@@ -73,7 +73,7 @@ setupCallback = do
                     setWindowSizeCallback $ Just windowSizeCallback
 
                     GL.glClearColor 1 1 1 0
-                    GL.glEnable GL.GL_DEPTH
+                    GL.glEnable GL.GL_DEPTH_TEST
 
                     return $ Right State
                         { program = program'
@@ -82,9 +82,9 @@ setupCallback = do
                         , mesh = mesh'
                         , cubeTexture = texture
                         , persp = makePerspective width height
-                        , view = lookAt (V3 0 0 3) (V3 0 0 (-1)) (V3 0 1 0)
+                        , view = lookAt (V3 0 4 10) (V3 0 0 (-1)) (V3 0 1 0)
                         , cubeRotation = 0
-                        , model = makeRotation (-(pi / 8))
+                        , model = makeRotation 0
                         }
 
                 Left err -> return $ Left err
@@ -92,13 +92,13 @@ setupCallback = do
         Left err -> return $ Left err
 
 animateCallback :: Render State ()
-animateCallback = return ()
-    -- duration <- frameDuration
-    -- modifyAppState $ \state ->
-    --     let newRotation = (realToFrac duration) * 0.05 * pi + (cubeRotation state)
-    --     in state { cubeRotation = newRotation
-    --              , model = makeRotation newRotation
-    --              }
+animateCallback = do
+    duration <- frameDuration
+    modifyAppState $ \state ->
+        let newRotation = (realToFrac duration) * 0.01 * pi + (cubeRotation state)
+        in state { cubeRotation = newRotation
+                 , model = makeRotation newRotation
+                 }
 
 renderCallback :: Render State ()
 renderCallback = do
@@ -145,18 +145,21 @@ indices =
     fromList
         [ -- Negative z
           0, 1, 2, 0, 2, 3
+          -- Positive z
+        , 5, 4, 7, 5, 7, 6
           -- Negative x
         , 1, 5, 6, 1, 6, 2
           -- Positive x
         , 4, 0, 3, 4, 3, 7
+          -- Negative y
+        , 3, 2, 6, 3, 6, 7
           -- Positive y
-        , 0, 1, 4, 1, 4, 5
+        , 4, 5, 1, 4, 1, 0
         ]
 
 makePerspective :: Int -> Int -> M44 GLfloat
 makePerspective width height =
     perspective (toRadians 45) (fromIntegral width / fromIntegral height) 0.001 1000
-
 
 makeRotation :: GLfloat -> M44 GLfloat
 makeRotation theta = mkTransformation (axisAngle (V3 0 1 0) theta) zero
