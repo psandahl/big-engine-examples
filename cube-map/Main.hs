@@ -53,8 +53,8 @@ setupCallback = do
     case eProgram of
         Right program' -> do
 
-            let files = CubeMapFiles { negativeX = "cube-map/right.png"
-                                     , positiveX = "cube-map/left.png"
+            let files = CubeMapFiles { negativeX = "cube-map/left.png"
+                                     , positiveX = "cube-map/right.png"
                                      , negativeY = "cube-map/bottom.png"
                                      , positiveY = "cube-map/top.png"
                                      , negativeZ = "cube-map/back.png"
