@@ -1,21 +1,22 @@
 module Main where
 
-import           BigE.Attribute.Vert_P (Vertex (..))
-import           BigE.Math             (toRadians)
-import           BigE.Mesh             (Mesh)
-import qualified BigE.Mesh             as Mesh
-import qualified BigE.Program          as Program
+import           BigE.Attribute.Vert_P  (Vertex (..))
+import           BigE.Math              (toRadians)
+import           BigE.Mesh              (Mesh)
+import qualified BigE.Mesh              as Mesh
+import qualified BigE.Program           as Program
 import           BigE.Runtime
-import           BigE.Texture          (CubeMapFiles (..))
-import qualified BigE.Texture          as Texture
+import           BigE.Texture           (CubeMapFiles (..))
+import qualified BigE.Texture           as Texture
 import           BigE.Types
-import           Data.Bits             ((.|.))
-import           Data.Vector.Storable  (Vector, fromList)
-import           Graphics.GL           (GLfloat, GLuint)
-import qualified Graphics.GL           as GL
-import           Linear                (M44, V3 (..), axisAngle, lookAt,
-                                        mkTransformation, perspective, zero,
-                                        (!*!))
+import           Control.Monad.IO.Class (liftIO)
+import           Data.Bits              ((.|.))
+import           Data.Vector.Storable   (Vector, fromList)
+import           Graphics.GL            (GLfloat, GLuint)
+import qualified Graphics.GL            as GL
+import           Linear                 (M44, V3 (..), axisAngle, lookAt,
+                                         mkTransformation, perspective, zero,
+                                         (!*!))
 
 data State = State
     { program        :: !Program
@@ -71,6 +72,8 @@ setupCallback = do
                     (width, height) <- displayDimensions
 
                     setWindowSizeCallback $ Just windowSizeCallback
+                    setKeyPressedCallback $ Just keyPressedCallback
+                    setKeyReleasedCallback $ Just keyReleasedCallback
 
                     GL.glClearColor 1 1 1 0
                     GL.glEnable GL.GL_DEPTH_TEST
@@ -126,6 +129,16 @@ teardownCallback = do
 windowSizeCallback :: Int -> Int -> Render State ()
 windowSizeCallback width height =
     modifyAppState (\state -> state { persp = makePerspective width height })
+
+keyPressedCallback :: Key -> ModifierKeys -> Render State ()
+keyPressedCallback key _ = do
+    liftIO $ putStr "Pressed: "
+    liftIO $ putStrLn (show key)
+
+keyReleasedCallback :: Key -> ModifierKeys -> Render State ()
+keyReleasedCallback key _ = do
+    liftIO $ putStr "Released: "
+    liftIO $ putStrLn (show key)
 
 vertices :: GLfloat -> Vector Vertex
 vertices width =
