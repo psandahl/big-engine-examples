@@ -12,7 +12,7 @@ import qualified BigE.Program             as Program
 import           BigE.Runtime             (Configuration (..), DisplayMode (..),
                                            Render, displayDimensions,
                                            frameDuration, getAppStateUnsafe,
-                                           modifyAppState, runBigE,
+                                           modifyAppState, putAppState, runBigE,
                                            setWindowSizeCallback)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
@@ -90,6 +90,8 @@ setupCallback = do
             case ePicker of
                 Right picker' -> do
 
+                    setWindowSizeCallback (Just windowSizeCallback)
+
                     mesh <- Mesh.fromVector StaticDraw vertices indices
                     entMvpLoc' <- Program.getUniformLocation entProgram' "mvp"
                     boxMvpLoc' <- Program.getUniformLocation boxProgram' "mvp"
@@ -140,7 +142,9 @@ renderCallback = do
     GL.glClearColor 0 0 0.4 0
     GL.glClear (GL.GL_COLOR_BUFFER_BIT .|. GL.GL_DEPTH_BUFFER_BIT)
 
-    -- Render box
+    -- Render box.
+    (width, height) <- displayDimensions
+    GL.glViewport 0 0 (fromIntegral width) (fromIntegral height)
     Program.enable (boxProgram state)
     Mesh.enable (boxMesh state)
 
@@ -184,6 +188,18 @@ teardownCallback = do
     MousePicker.delete $ picker state
 
     liftIO $ print state
+
+windowSizeCallback :: Int -> Int -> Render State ()
+windowSizeCallback width height = do
+    state <- getAppStateUnsafe
+
+    ePicker <- MousePicker.resize width height $ picker state
+    case ePicker of
+        Right picker' ->
+            putAppState $ state { persp = makePerspective width height
+                                , picker = picker'
+                                }
+        Left err -> liftIO $ putStrLn "PANIC: MousePicker.resize"
 
 vertices :: Vector Vertex
 vertices =
