@@ -11,12 +11,14 @@ import qualified BigE.MousePicker         as MousePicker
 import qualified BigE.Program             as Program
 import           BigE.Runtime             (Configuration (..), DisplayMode (..),
                                            Render, displayDimensions,
-                                           getAppStateUnsafe, modifyAppState,
-                                           runBigE, setWindowSizeCallback)
+                                           frameDuration, getAppStateUnsafe,
+                                           modifyAppState, runBigE,
+                                           setWindowSizeCallback)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
-import           Control.Monad            (forM_)
+import           Control.Monad            (forM_, unless)
 import           Control.Monad.IO.Class   (liftIO)
+import           Data.Bits                ((.|.))
 import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.GL              (GLfloat, GLint, GLuint)
 import qualified Graphics.GL              as GL
@@ -49,6 +51,8 @@ data State = State
     , persp      :: !(M44 GLfloat)
     , view       :: !(M44 GLfloat)
     , entities   :: ![Entity]
+    , frameTime  :: !Double
+    , frames     :: !Int
     } deriving Show
 
 main :: IO ()
@@ -104,8 +108,6 @@ setupCallback = do
                                       , objId = mkObjectId 65280
                                       }
 
-                    GL.glClearColor 0 0 0.4 0
-
                     return $ Right State
                         { boxProgram = boxProgram'
                         , boxMvpLoc = boxMvpLoc'
@@ -116,6 +118,8 @@ setupCallback = do
                         , persp = makePerspective width height
                         , view = lookAt (V3 0 0 10) (V3 0 0 0) (V3 0 1 0)
                         , entities = [ent1, ent2]
+                        , frameTime = 0
+                        , frames = 0
                         }
 
                 Left err -> return $ Left err
@@ -132,7 +136,9 @@ renderCallback = do
     MousePicker.render vp (map Pickable $ entities state) (picker state)
 
     -- Now proceed with ordinary rendering.
-    GL.glClear GL.GL_COLOR_BUFFER_BIT
+    GL.glEnable GL.GL_DEPTH_FUNC
+    GL.glClearColor 0 0 0.4 0
+    GL.glClear (GL.GL_COLOR_BUFFER_BIT .|. GL.GL_DEPTH_BUFFER_BIT)
 
     -- Render box
     Program.enable (boxProgram state)
@@ -161,10 +167,22 @@ renderCallback = do
         Mesh.disable
         Program.disable
 
+    duration <- frameDuration
+    modifyAppState $ \s -> s { frameTime = duration + frameTime s
+                             , frames = frames s + 1
+                             }
+
 teardownCallback :: Render State ()
 teardownCallback = do
-    liftIO $ putStrLn "teardown"
     state <- getAppStateUnsafe
+    Program.delete $ boxProgram state
+    let xs = entities state
+    unless (null xs) $
+        Program.delete (entProgram $ head xs)
+
+    Mesh.delete $ boxMesh state
+    MousePicker.delete $ picker state
+
     liftIO $ print state
 
 vertices :: Vector Vertex
