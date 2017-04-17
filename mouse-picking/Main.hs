@@ -46,7 +46,7 @@ data State = State
     , boxMvpLoc  :: !Location
     , boxTexLoc  :: !Location
     , boxMesh    :: !Mesh
-    , boxModel   :: !(M44 GLfloat)
+    , boxTrans   :: !(M44 GLfloat)
     , picker     :: !MousePicker
     , persp      :: !(M44 GLfloat)
     , view       :: !(M44 GLfloat)
@@ -115,7 +115,7 @@ setupCallback = do
                         , boxMvpLoc = boxMvpLoc'
                         , boxTexLoc = boxTexLoc'
                         , boxMesh = mesh
-                        , boxModel = makeTranslation (V3 0 2 0)
+                        , boxTrans = makeTranslation (V3 0 2 0)
                         , picker = picker'
                         , persp = makePerspective width height
                         , view = lookAt (V3 0 0 10) (V3 0 0 0) (V3 0 1 0)
@@ -148,7 +148,11 @@ renderCallback = do
     Program.enable (boxProgram state)
     Mesh.enable (boxMesh state)
 
-    let mvp = vp !*! boxModel state
+    -- Make the shape of the box proportional to the screen by
+    -- scaling its x axis.
+    let xScale = fromIntegral width / fromIntegral height
+        boxScale = makeScaling (V3 xScale 1 1)
+        mvp = vp !*! boxTrans state !*! boxScale
     setUniform (boxMvpLoc state) mvp
     Texture.enable2D 0 (colorTexture $ picker state)
     setUniform (boxTexLoc state) (0 :: GLint)
@@ -225,4 +229,11 @@ makeTranslation (V3 x y z) =
     V4 (V4 1 0 0 x)
        (V4 0 1 0 y)
        (V4 0 0 1 z)
+       (V4 0 0 0 1)
+
+makeScaling :: V3 GLfloat -> M44 GLfloat
+makeScaling (V3 x y z) =
+    V4 (V4 x 0 0 0)
+       (V4 0 y 0 0)
+       (V4 0 0 z 0)
        (V4 0 0 0 1)
