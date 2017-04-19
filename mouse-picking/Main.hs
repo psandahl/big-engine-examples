@@ -115,7 +115,7 @@ setupCallback = do
                         ent3 = Entity { entProgram = entProgram'
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
-                                      , model = makeTranslation (V3 0 0 (-5))
+                                      , model = makeTranslation (V3 0 0 (-3))
                                       , objId = mkObjectId 255 0 0
                                       }
 
@@ -147,7 +147,7 @@ renderCallback = do
     MousePicker.render vp (map Pickable $ entities state) (picker state)
 
     -- Now proceed with ordinary rendering.
-    GL.glEnable GL.GL_DEPTH_FUNC
+    GL.glEnable GL.GL_DEPTH_TEST
     GL.glClearColor 0 0 0.4 0
     GL.glClear (GL.GL_COLOR_BUFFER_BIT .|. GL.GL_DEPTH_BUFFER_BIT)
 
