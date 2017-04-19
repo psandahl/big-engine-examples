@@ -10,9 +10,11 @@ import           BigE.MousePicker         (MousePicker (..), ObjectId,
 import qualified BigE.MousePicker         as MousePicker
 import qualified BigE.Program             as Program
 import           BigE.Runtime             (Configuration (..), DisplayMode (..),
-                                           Render, displayDimensions,
-                                           frameDuration, getAppStateUnsafe,
-                                           modifyAppState, putAppState, runBigE,
+                                           ModifierKeys, MouseButton, Render,
+                                           displayDimensions, frameDuration,
+                                           getAppStateUnsafe, modifyAppState,
+                                           putAppState, runBigE,
+                                           setMousePressedCallback,
                                            setWindowSizeCallback)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
@@ -91,6 +93,7 @@ setupCallback = do
                 Right picker' -> do
 
                     setWindowSizeCallback (Just windowSizeCallback)
+                    setMousePressedCallback (Just mousePressedCallback)
 
                     mesh <- Mesh.fromVector StaticDraw vertices indices
                     entMvpLoc' <- Program.getUniformLocation entProgram' "mvp"
@@ -204,6 +207,10 @@ windowSizeCallback width height = do
                                 , picker = picker'
                                 }
         Left err -> liftIO $ putStrLn "PANIC: MousePicker.resize"
+
+mousePressedCallback :: MouseButton -> ModifierKeys -> (Int, Int) -> Render State ()
+mousePressedCallback _button _modKeys pos = do
+    liftIO $ print pos
 
 vertices :: Vector Vertex
 vertices =
