@@ -20,7 +20,7 @@ executable empty-window
   build-depends:       base >= 4.7 && < 5
                      , big-engine
                      , OpenGLRaw
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable untransformed-triangle
   hs-source-dirs:      untransformed-triangle
@@ -32,7 +32,7 @@ executable untransformed-triangle
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable rotating-triangle
   hs-source-dirs:      rotating-triangle
@@ -44,7 +44,7 @@ executable rotating-triangle
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable dynamic-draw
   hs-source-dirs:      dynamic-draw
@@ -56,7 +56,7 @@ executable dynamic-draw
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable transparant-cat
   hs-source-dirs:      transparant-cat
@@ -68,7 +68,7 @@ executable transparant-cat
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable cube-map
   hs-source-dirs:      cube-map
@@ -79,7 +79,7 @@ executable cube-map
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
 
 executable mouse-picking
   hs-source-dirs:      mouse-picking
@@ -90,4 +90,4 @@ executable mouse-picking
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2

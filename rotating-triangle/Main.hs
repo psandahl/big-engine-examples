@@ -7,7 +7,6 @@ import qualified BigE.Mesh               as Mesh
 import qualified BigE.Program            as Program
 import           BigE.Runtime
 import           BigE.Types
-import           Control.Monad.IO.Class  (MonadIO, liftIO)
 import           Data.Vector.Storable    (Vector, fromList)
 import           Graphics.GL             (GLfloat, GLuint)
 import qualified Graphics.GL             as GL

@@ -1,23 +1,22 @@
 module Main where
 
-import           BigE.Attribute.Vert_P  (Vertex (..))
-import           BigE.Math              (toRadians)
-import           BigE.Mesh              (Mesh)
-import qualified BigE.Mesh              as Mesh
-import qualified BigE.Program           as Program
+import           BigE.Attribute.Vert_P (Vertex (..))
+import           BigE.Math             (toRadians)
+import           BigE.Mesh             (Mesh)
+import qualified BigE.Mesh             as Mesh
+import qualified BigE.Program          as Program
 import           BigE.Runtime
-import           BigE.Texture           (CubeMapFiles (..))
-import qualified BigE.Texture           as Texture
+import           BigE.Texture          (CubeMapFiles (..))
+import qualified BigE.Texture          as Texture
 import           BigE.Types
-import           Control.Monad          (when)
-import           Control.Monad.IO.Class (liftIO)
-import           Data.Bits              ((.|.))
-import           Data.Vector.Storable   (Vector, fromList)
-import           Graphics.GL            (GLfloat, GLuint)
-import qualified Graphics.GL            as GL
-import           Linear                 (M44, V3 (..), V4 (..), axisAngle,
-                                         lookAt, mkTransformation, normalize,
-                                         perspective, zero, (!*), (!*!))
+import           Control.Monad         (when)
+import           Data.Bits             ((.|.))
+import           Data.Vector.Storable  (Vector, fromList)
+import           Graphics.GL           (GLfloat, GLuint)
+import qualified Graphics.GL           as GL
+import           Linear                (M44, V3 (..), V4 (..), axisAngle,
+                                        lookAt, mkTransformation, normalize,
+                                        perspective, zero, (!*), (!*!))
 
 data State = State
     { program        :: !Program

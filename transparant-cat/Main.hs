@@ -10,7 +10,6 @@ import           BigE.Texture             (TextureParameters (..),
                                            defaultParams2D)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
-import           Control.Monad.IO.Class   (MonadIO, liftIO)
 import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.GL              (GLfloat, GLint, GLuint)
 import qualified Graphics.GL              as GL

@@ -4,9 +4,9 @@ import           BigE.Attribute.Vert_P_Tx (Vertex (..))
 import           BigE.Math                (toRadians)
 import           BigE.Mesh                (Mesh)
 import qualified BigE.Mesh                as Mesh
-import           BigE.MousePicker         (MousePicker (..), ObjectId,
+import           BigE.MousePicker         (MousePicker (..), PickId,
                                            PickObject (..), Pickable (..),
-                                           mkObjectId)
+                                           literalPickId)
 import qualified BigE.MousePicker         as MousePicker
 import qualified BigE.Program             as Program
 import           BigE.Runtime             (Configuration (..), DisplayMode (..),
@@ -32,11 +32,11 @@ data Entity = Entity
     , entMvpLoc  :: !Location
     , entMesh    :: !Mesh
     , model      :: !(M44 GLfloat)
-    , objId      :: !ObjectId
+    , pid        :: !PickId
     } deriving Show
 
 instance PickObject Entity where
-    objectId = objId
+    pickId = pid
     modelMatrix = model
     renderForPicking ent = do
         Mesh.enable (entMesh ent)
@@ -104,19 +104,19 @@ setupCallback = do
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
                                       , model = makeTranslation (V3 (-3) (-3) 0)
-                                      , objId = mkObjectId 0 0 255
+                                      , pid = literalPickId 0 0 255
                                       }
                         ent2 = Entity { entProgram = entProgram'
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
                                       , model = makeTranslation (V3 1 (-1) 0)
-                                      , objId = mkObjectId 0 255 0
+                                      , pid = literalPickId 0 255 0
                                       }
                         ent3 = Entity { entProgram = entProgram'
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
                                       , model = makeTranslation (V3 0 0 (-3))
-                                      , objId = mkObjectId 255 0 0
+                                      , pid = literalPickId 255 0 0
                                       }
 
                     return $ Right State
@@ -134,6 +134,8 @@ setupCallback = do
                         }
 
                 Left err -> return $ Left err
+
+        Right _ -> return $ Left "Unexpected number of shader programs"
 
         Left err -> return $ Left err
 
@@ -212,14 +214,15 @@ windowSizeCallback width height = do
             putAppState $ state { persp = makePerspective width height
                                 , picker = picker'
                                 }
-        Left err -> liftIO $ putStrLn "PANIC: MousePicker.resize"
+        Left _err -> liftIO $ putStrLn "PANIC: MousePicker.resize"
 
 mousePressedCallback :: MouseButton -> ModifierKeys -> (Int, Int) -> Render State ()
 mousePressedCallback _button _modKeys (x, y) = do
     state <- getAppStateUnsafe
     (_, height) <- displayDimensions
-    objId <- MousePicker.getPickedObjectId (x, height - y) $ picker state
-    liftIO $ print objId
+    -- Rows need to be swapped between mouse coords and framebuffer coords.
+    pid' <- MousePicker.getPickId (x, height - y) $ picker state
+    liftIO $ print pid'
 
 vertices :: Vector Vertex
 vertices =
