@@ -104,13 +104,19 @@ setupCallback = do
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
                                       , model = makeTranslation (V3 (-3) (-3) 0)
-                                      , objId = mkObjectId 255
+                                      , objId = mkObjectId 0 0 255
                                       }
                         ent2 = Entity { entProgram = entProgram'
                                       , entMvpLoc = entMvpLoc'
                                       , entMesh = mesh
                                       , model = makeTranslation (V3 1 (-1) 0)
-                                      , objId = mkObjectId 65280
+                                      , objId = mkObjectId 0 255 0
+                                      }
+                        ent3 = Entity { entProgram = entProgram'
+                                      , entMvpLoc = entMvpLoc'
+                                      , entMesh = mesh
+                                      , model = makeTranslation (V3 0 0 (-5))
+                                      , objId = mkObjectId 255 0 0
                                       }
 
                     return $ Right State
@@ -122,7 +128,7 @@ setupCallback = do
                         , picker = picker'
                         , persp = makePerspective width height
                         , view = lookAt (V3 0 0 10) (V3 0 0 0) (V3 0 1 0)
-                        , entities = [ent1, ent2]
+                        , entities = [ent1, ent2, ent3]
                         , frameTime = 0
                         , frames = 0
                         }
@@ -209,8 +215,11 @@ windowSizeCallback width height = do
         Left err -> liftIO $ putStrLn "PANIC: MousePicker.resize"
 
 mousePressedCallback :: MouseButton -> ModifierKeys -> (Int, Int) -> Render State ()
-mousePressedCallback _button _modKeys pos = do
-    liftIO $ print pos
+mousePressedCallback _button _modKeys (x, y) = do
+    state <- getAppStateUnsafe
+    (_, height) <- displayDimensions
+    objId <- MousePicker.getPickedObjectId (x, height - y) $ picker state
+    liftIO $ print objId
 
 vertices :: Vector Vertex
 vertices =
