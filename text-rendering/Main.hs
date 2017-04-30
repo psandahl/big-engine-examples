@@ -1,13 +1,13 @@
 module Main where
 
 import           BigE.Attribute.Vert_P  (Vertex (..))
---import           BigE.Mesh              (Mesh)
+import           BigE.Mesh              (Mesh)
 import qualified BigE.Mesh              as Mesh
 import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.TextRenderer.Font (Font)
 import qualified BigE.TextRenderer.Font as Font
-import           BigE.TextRenderer.Text (Text (mesh))
+import           BigE.TextRenderer.Text (Text)
 import qualified BigE.TextRenderer.Text as Text
 import           BigE.Types
 import           Data.Either            (isLeft, isRight)
@@ -18,7 +18,7 @@ import           Linear                 (V3 (..))
 
 data State = State
     { program :: !Program
-    --, mesh    :: !Mesh
+    , meshh   :: !Mesh
     , font    :: !Font
     , text    :: !Text
     } deriving Show
@@ -48,12 +48,12 @@ setupCallback = do
     case eitherTwo (eProg, eFont) of
         Right (prog, font') -> do
             GL.glClearColor 0 0 0.4 0
-            --mesh' <- Mesh.fromVector StaticDraw vertices indices
+            meshh' <- Mesh.fromVector StaticDraw vertices indices
             text' <- Text.init font' "Aq"
 
             return $ Right State
                 { program = prog
-                --, mesh = mesh'
+                , meshh = meshh'
                 , font = font'
                 , text = text'
                 }
@@ -66,9 +66,9 @@ renderCallback = do
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
     Program.enable (program state)
-    Mesh.enable (mesh $ text state)
+    Mesh.enable (meshh state)
 
-    Mesh.render Triangles (mesh $ text state)
+    Mesh.render Triangles (meshh state)
 
     Mesh.disable
     Program.disable
@@ -81,7 +81,7 @@ teardownCallback = do
 
 vertices :: Vector Vertex
 vertices =
-    fromList $ quadAt (0, 0) 0.25 0.25
+    fromList $ quadAt (-0.25, 0.25) 0.5 0.5
 
 indices :: Vector GLuint
 indices = fromList [0, 1, 2, 0, 2, 3]
