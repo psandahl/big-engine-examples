@@ -7,20 +7,25 @@ import qualified BigE.Program           as Program
 import           BigE.Runtime
 import           BigE.TextRenderer.Font (Font)
 import qualified BigE.TextRenderer.Font as Font
-import           BigE.TextRenderer.Text (Text)
+import           BigE.TextRenderer.Text (Text (mesh))
 import qualified BigE.TextRenderer.Text as Text
+import           BigE.Texture           (TextureParameters (..),
+                                         defaultParams2D)
+import qualified BigE.Texture           as Texture
 import           BigE.Types
 import           Data.Either            (isLeft, isRight)
 import           Data.Vector.Storable   (Vector, fromList)
-import           Graphics.GL            (GLfloat, GLuint)
+import           Graphics.GL            (GLfloat, GLint, GLuint)
 import qualified Graphics.GL            as GL
 import           Linear                 (V3 (..))
 
 data State = State
-    { program :: !Program
-    , meshh   :: !Mesh
-    , font    :: !Font
-    , text    :: !Text
+    { program      :: !Program
+    , meshh        :: !Mesh
+    , font         :: !Font
+    , fontAtlasLoc :: !Location
+    , fontAtlas    :: !Texture
+    , text         :: !Text
     } deriving Show
 
 main :: IO ()
@@ -44,17 +49,26 @@ setupCallback = do
                  , (FragmentShader, "text-rendering/fragment.glsl")
                  ]
     eFont <- Font.fromFile "text-rendering/noto-bold.fnt"
+    eFontAtlas <- Texture.fromFile2D "text-rendering/noto-bold.png"
+                defaultParams2D { format = RGBA8
+                                , wrapS = WrapClampToEdge
+                                , wrapT = WrapClampToEdge
+                                }
 
-    case eitherTwo (eProg, eFont) of
-        Right (prog, font') -> do
+    case eitherThree (eProg, eFont, eFontAtlas) of
+        Right (prog, font', fontAtlas') -> do
+            fontAtlasLoc' <- Program.getUniformLocation prog "fontAtlas"
+
             GL.glClearColor 0 0 0.4 0
             meshh' <- Mesh.fromVector StaticDraw vertices indices
-            text' <- Text.init font' "Aq"
+            text' <- Text.init font' "Haskell OpenGL Rock!"
 
             return $ Right State
                 { program = prog
                 , meshh = meshh'
                 , font = font'
+                , fontAtlas = fontAtlas'
+                , fontAtlasLoc = fontAtlasLoc'
                 , text = text'
                 }
 
@@ -65,11 +79,15 @@ renderCallback = do
     state <- getAppStateUnsafe
 
     GL.glClear GL.GL_COLOR_BUFFER_BIT
+
     Program.enable (program state)
-    Mesh.enable (meshh state)
+    Mesh.enable (mesh $ text state)
+    Texture.enable2D 0 (fontAtlas state)
+    setUniform (fontAtlasLoc state) (0 :: GLint)
 
-    Mesh.render Triangles (meshh state)
+    Mesh.render Triangles (mesh $ text state)
 
+    Texture.disable2D 0
     Mesh.disable
     Program.disable
 
@@ -81,7 +99,7 @@ teardownCallback = do
 
 vertices :: Vector Vertex
 vertices =
-    fromList $ quadAt (-0.25, 0.25) 0.5 0.5
+    fromList $ quadAt (0, 0) 0.5 0.5
 
 indices :: Vector GLuint
 indices = fromList [0, 1, 2, 0, 2, 3]
@@ -105,4 +123,21 @@ eitherTwo (e1, e2)
         in Left err
     | otherwise =
         let Left err = e2
+        in Left err
+
+eitherThree :: (Either a b, Either a c, Either a d) -> Either a (b, c, d)
+eitherThree (e1, e2, e3)
+    | isRight e1 && isRight e2 && isRight e3 =
+        let Right e1' = e1
+            Right e2' = e2
+            Right e3' = e3
+        in Right (e1', e2', e3')
+    | isLeft e1 =
+        let Left err = e1
+        in Left err
+    | isLeft e2 =
+        let Left err = e2
+        in Left err
+    | otherwise =
+        let Left err = e3
         in Left err
