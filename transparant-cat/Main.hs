@@ -10,6 +10,7 @@ import           BigE.Texture             (TextureParameters (..),
                                            defaultParams2D)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
+import           BigE.Util                (eitherTwo)
 import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.GL              (GLfloat, GLint, GLuint)
 import qualified Graphics.GL              as GL
@@ -46,33 +47,29 @@ setupCallback = do
                     [ (VertexShader, "transparant-cat/vertex.glsl")
                     , (FragmentShader, "transparant-cat/fragment.glsl")
                     ]
-    case eProgram of
-        Right program' -> do
-            eTexture <-
-                Texture.fromFile2D "transparant-cat/cat.png"
-                                   defaultParams2D { format = RGBA8 }
-            case eTexture of
-                Right texture -> do
-                    mvpLoc' <- Program.getUniformLocation program' "mvp"
-                    catTextureLoc' <- Program.getUniformLocation program' "catTexture"
-                    mesh' <- Mesh.fromVector StaticDraw vertices indices
-                    (width, height) <- displayDimensions
+    eTexture <- Texture.fromFile2D "transparant-cat/cat.png"
+                    defaultParams2D { format = RGBA8 }
 
-                    setWindowSizeCallback $ Just windowSizeCallback
+    case eitherTwo (eProgram, eTexture) of
+        Right (program', texture) -> do
+            mvpLoc' <- Program.getUniformLocation program' "mvp"
+            catTextureLoc' <- Program.getUniformLocation program' "catTexture"
+            mesh' <- Mesh.fromVector StaticDraw vertices indices
+            (width, height) <- displayDimensions
 
-                    GL.glClearColor 1 1 1 0
+            setWindowSizeCallback $ Just windowSizeCallback
 
-                    return $ Right State
-                        { program = program'
-                        , mvpLoc = mvpLoc'
-                        , catTextureLoc = catTextureLoc'
-                        , mesh = mesh'
-                        , catTexture = texture
-                        , persp = makePerspective width height
-                        , view = lookAt (V3 0 0 5) (V3 0 0 0) (V3 0 1 0)
-                        }
+            GL.glClearColor 1 1 1 0
 
-                Left err -> return $ Left err
+            return $ Right State
+                { program = program'
+                , mvpLoc = mvpLoc'
+                , catTextureLoc = catTextureLoc'
+                , mesh = mesh'
+                , catTexture = texture
+                , persp = makePerspective width height
+                , view = lookAt (V3 0 0 5) (V3 0 0 0) (V3 0 1 0)
+                }
 
         Left err -> return $ Left err
 
