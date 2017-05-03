@@ -9,6 +9,7 @@ import           BigE.Runtime
 import           BigE.Texture          (CubeMapFiles (..))
 import qualified BigE.Texture          as Texture
 import           BigE.Types
+import           BigE.Util             (eitherTwo)
 import           Control.Monad         (when)
 import           Data.Bits             ((.|.))
 import           Data.Vector.Storable  (Vector, fromList)
@@ -54,49 +55,45 @@ setupCallback = do
                     , (FragmentShader, "cube-map/fragment.glsl")
                     ]
 
-    case eProgram of
-        Right program' -> do
 
-            let files = CubeMapFiles { negativeX = "cube-map/left.png"
-                                     , positiveX = "cube-map/right.png"
-                                     , negativeY = "cube-map/bottom.png"
-                                     , positiveY = "cube-map/top.png"
-                                     , negativeZ = "cube-map/back.png"
-                                     , positiveZ = "cube-map/front.png"
-                                     }
-            eTexture <- Texture.fromFileCube files RGB8
-            case eTexture of
+    let files = CubeMapFiles { negativeX = "cube-map/left.png"
+                             , positiveX = "cube-map/right.png"
+                             , negativeY = "cube-map/bottom.png"
+                             , positiveY = "cube-map/top.png"
+                             , negativeZ = "cube-map/back.png"
+                             , positiveZ = "cube-map/front.png"
+                             }
+    eTexture <- Texture.fromFileCube files RGB8
+    case eitherTwo (eProgram, eTexture) of
 
-                Right texture -> do
+        Right (program', texture) -> do
 
-                    mvpLoc' <- Program.getUniformLocation program' "mvp"
-                    cubeTextureLoc' <- Program.getUniformLocation program' "cube"
-                    mesh' <- Mesh.fromVector StaticDraw (vertices 1) indices
-                    (width, height) <- displayDimensions
+            mvpLoc' <- Program.getUniformLocation program' "mvp"
+            cubeTextureLoc' <- Program.getUniformLocation program' "cube"
+            mesh' <- Mesh.fromVector StaticDraw (vertices 1) indices
+            (width, height) <- displayDimensions
 
-                    setWindowSizeCallback $ Just windowSizeCallback
-                    setKeyPressedCallback $ Just keyPressedCallback
-                    setKeyReleasedCallback $ Just keyReleasedCallback
+            setWindowSizeCallback $ Just windowSizeCallback
+            setKeyPressedCallback $ Just keyPressedCallback
+            setKeyReleasedCallback $ Just keyReleasedCallback
 
-                    GL.glClearColor 1 1 1 0
-                    GL.glEnable GL.GL_DEPTH_TEST
+            GL.glClearColor 1 1 1 0
+            GL.glEnable GL.GL_DEPTH_TEST
 
-                    return $ Right State
-                        { program = program'
-                        , mvpLoc = mvpLoc'
-                        , cubeTextureLoc = cubeTextureLoc'
-                        , mesh = mesh'
-                        , cubeTexture = texture
-                        , persp = makePerspective width height
-                        , view = lookAt cameraPos startView yAxis
-                        , viewVector = startView
-                        , turnLeft = False
-                        , turnRight = False
-                        , lookUp = False
-                        , lookDown = False
-                        }
-
-                Left err -> return $ Left err
+            return $ Right State
+                { program = program'
+                , mvpLoc = mvpLoc'
+                , cubeTextureLoc = cubeTextureLoc'
+                , mesh = mesh'
+                , cubeTexture = texture
+                , persp = makePerspective width height
+                , view = lookAt cameraPos startView yAxis
+                , viewVector = startView
+                , turnLeft = False
+                , turnRight = False
+                , lookUp = False
+                , lookDown = False
+                }
 
         Left err -> return $ Left err
 
@@ -111,8 +108,8 @@ animateCallback = do
 
 handleLeftTurn :: GLfloat -> State -> State
 handleLeftTurn duration state
-    | turnLeft state == True =
-        let theta = (realToFrac duration) * 0.5 * pi
+    | turnLeft state =
+        let theta = realToFrac duration * 0.5 * pi
             viewVector' = rotateBy theta (viewVector state)
             view' = lookAt cameraPos (cameraPos + viewVector') yAxis
         in state { view = view', viewVector = viewVector' }
@@ -120,8 +117,8 @@ handleLeftTurn duration state
 
 handleRightTurn :: GLfloat -> State -> State
 handleRightTurn duration state
-    | turnRight state == True =
-        let theta = (realToFrac duration) * 0.5 * (-pi)
+    | turnRight state =
+        let theta = realToFrac duration * 0.5 * (-pi)
             viewVector' = rotateBy theta (viewVector state)
             view' = lookAt cameraPos (cameraPos + viewVector') yAxis
         in state { view = view', viewVector = viewVector' }
@@ -129,7 +126,7 @@ handleRightTurn duration state
 
 handleLookUp :: GLfloat -> State -> State
 handleLookUp duration state
-    | lookUp state == True =
+    | lookUp state =
         let V3 x y z = viewVector state
             y' = min 1.0 (y + duration)
             viewVector' = normalize $ V3 x y' z
@@ -139,7 +136,7 @@ handleLookUp duration state
 
 handleLookDown :: GLfloat -> State -> State
 handleLookDown duration state
-    | lookDown state == True =
+    | lookDown state =
         let V3 x y z = viewVector state
             y' = max (-1.0) (y - duration)
             viewVector' = normalize $ V3 x y' z
