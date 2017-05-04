@@ -18,6 +18,7 @@ import           BigE.Runtime             (Configuration (..), DisplayMode (..),
                                            setWindowSizeCallback)
 import qualified BigE.Texture             as Texture
 import           BigE.Types
+import           BigE.Util                (eitherThree)
 import           Control.Monad            (forM_, unless)
 import           Control.Monad.IO.Class   (liftIO)
 import           Data.Bits                ((.|.))
@@ -73,69 +74,63 @@ main = do
 
 setupCallback :: Render State (Either String State)
 setupCallback = do
-    eProgram <-
-        sequence <$> mapM Program.fromFile
-            [
-              [ (VertexShader, "mouse-picking/entvertex.glsl")
-              , (FragmentShader, "mouse-picking/entfragment.glsl")
-              ]
-            , [ (VertexShader, "mouse-picking/boxvertex.glsl")
-              , (FragmentShader, "mouse-picking/boxfragment.glsl")
-              ]
+    eEntProgram <-
+        Program.fromFile
+            [ (VertexShader, "mouse-picking/entvertex.glsl")
+            , (FragmentShader, "mouse-picking/entfragment.glsl")
+            ]
+    eBoxProgram <-
+        Program.fromFile
+            [ (VertexShader, "mouse-picking/boxvertex.glsl")
+            , (FragmentShader, "mouse-picking/boxfragment.glsl")
             ]
 
-    case eProgram of
-        Right [entProgram', boxProgram'] -> do
-            (width, height) <- displayDimensions
+    (width, height) <- displayDimensions
+    ePicker <- MousePicker.init width height
 
-            ePicker <- MousePicker.init width height
-            case ePicker of
-                Right picker' -> do
+    case eitherThree (eEntProgram, eBoxProgram, ePicker) of
+        Right (entProgram', boxProgram', picker') -> do
 
-                    setWindowSizeCallback (Just windowSizeCallback)
-                    setMousePressedCallback (Just mousePressedCallback)
+            setWindowSizeCallback (Just windowSizeCallback)
+            setMousePressedCallback (Just mousePressedCallback)
 
-                    mesh <- Mesh.fromVector StaticDraw vertices indices
-                    entMvpLoc' <- Program.getUniformLocation entProgram' "mvp"
-                    boxMvpLoc' <- Program.getUniformLocation boxProgram' "mvp"
-                    boxTexLoc' <- Program.getUniformLocation boxProgram' "tex"
+            mesh <- Mesh.fromVector StaticDraw vertices indices
+            entMvpLoc' <- Program.getUniformLocation entProgram' "mvp"
+            boxMvpLoc' <- Program.getUniformLocation boxProgram' "mvp"
+            boxTexLoc' <- Program.getUniformLocation boxProgram' "tex"
 
-                    let ent1 = Entity { entProgram = entProgram'
-                                      , entMvpLoc = entMvpLoc'
-                                      , entMesh = mesh
-                                      , model = makeTranslation (V3 (-3) (-3) 0)
-                                      , pid = literalPickId 0 0 255
-                                      }
-                        ent2 = Entity { entProgram = entProgram'
-                                      , entMvpLoc = entMvpLoc'
-                                      , entMesh = mesh
-                                      , model = makeTranslation (V3 1 (-1) 0)
-                                      , pid = literalPickId 0 255 0
-                                      }
-                        ent3 = Entity { entProgram = entProgram'
-                                      , entMvpLoc = entMvpLoc'
-                                      , entMesh = mesh
-                                      , model = makeTranslation (V3 0 0 (-3))
-                                      , pid = literalPickId 255 0 0
-                                      }
+            let ent1 = Entity { entProgram = entProgram'
+                              , entMvpLoc = entMvpLoc'
+                              , entMesh = mesh
+                              , model = makeTranslation (V3 (-3) (-3) 0)
+                              , pid = literalPickId 0 0 255
+                              }
+                ent2 = Entity { entProgram = entProgram'
+                              , entMvpLoc = entMvpLoc'
+                              , entMesh = mesh
+                              , model = makeTranslation (V3 1 (-1) 0)
+                              , pid = literalPickId 0 255 0
+                              }
+                ent3 = Entity { entProgram = entProgram'
+                              , entMvpLoc = entMvpLoc'
+                              , entMesh = mesh
+                              , model = makeTranslation (V3 0 0 (-3))
+                              , pid = literalPickId 255 0 0
+                              }
 
-                    return $ Right State
-                        { boxProgram = boxProgram'
-                        , boxMvpLoc = boxMvpLoc'
-                        , boxTexLoc = boxTexLoc'
-                        , boxMesh = mesh
-                        , boxTrans = makeTranslation (V3 0 2 0)
-                        , picker = picker'
-                        , persp = makePerspective width height
-                        , view = lookAt (V3 0 0 10) (V3 0 0 0) (V3 0 1 0)
-                        , entities = [ent1, ent2, ent3]
-                        , frameTime = 0
-                        , frames = 0
-                        }
-
-                Left err -> return $ Left err
-
-        Right _ -> return $ Left "Unexpected number of shader programs"
+            return $ Right State
+                { boxProgram = boxProgram'
+                , boxMvpLoc = boxMvpLoc'
+                , boxTexLoc = boxTexLoc'
+                , boxMesh = mesh
+                , boxTrans = makeTranslation (V3 0 2 0)
+                , picker = picker'
+                , persp = makePerspective width height
+                , view = lookAt (V3 0 0 10) (V3 0 0 0) (V3 0 1 0)
+                , entities = [ent1, ent2, ent3]
+                , frameTime = 0
+                , frames = 0
+                }
 
         Left err -> return $ Left err
 
