@@ -26,12 +26,16 @@ import           Data.Vector.Storable     (Vector, fromList)
 import           Graphics.GL              (GLfloat, GLint, GLuint)
 import qualified Graphics.GL              as GL
 import           Linear                   (M44, V2 (..), V3 (..), V4 (..),
-                                           lookAt, perspective, (!*!))
+                                           axisAngle, lookAt, mkTransformation,
+                                           perspective, (!*!))
 
 data Entity = Entity
     { entProgram :: !Program
     , entMvpLoc  :: !Location
     , entMesh    :: !Mesh
+    , pos        :: !(V3 GLfloat)
+    , rotation   :: !GLfloat
+    , rotAxis    :: !(V3 GLfloat)
     , model      :: !(M44 GLfloat)
     , pid        :: !PickId
     } deriving Show
@@ -65,7 +69,7 @@ main = do
                              , displayMode = SizedScreen (1024, 768)
                              , windowCaption = "Mouse Picking"
                              , setup = setupCallback
-                             , animate = return ()
+                             , animate = animateCallback
                              , render = renderCallback
                              , teardown = teardownCallback
                              }
@@ -102,19 +106,28 @@ setupCallback = do
             let ent1 = Entity { entProgram = entProgram'
                               , entMvpLoc = entMvpLoc'
                               , entMesh = mesh
-                              , model = makeTranslation (V3 (-3) (-3) 0)
+                              , pos = V3 (-3) (-3) 0
+                              , rotAxis = V3 0 1 0
+                              , rotation = 0
+                              , model = makeRotation (V3 0 1 0) 0 (V3 (-3) (-3) 0)
                               , pid = literalPickId 0 0 255
                               }
                 ent2 = Entity { entProgram = entProgram'
                               , entMvpLoc = entMvpLoc'
                               , entMesh = mesh
-                              , model = makeTranslation (V3 1 (-1) 0)
+                              , pos = V3 1 (-1) 0
+                              , rotAxis = V3 1 0 0
+                              , rotation = 1.14
+                              , model = makeRotation (V3 1 0 0) 1.14 (V3 1 (-1) 0)
                               , pid = literalPickId 0 255 0
                               }
                 ent3 = Entity { entProgram = entProgram'
                               , entMvpLoc = entMvpLoc'
                               , entMesh = mesh
-                              , model = makeTranslation (V3 0 0 (-3))
+                              , pos = V3 0 0 (-3)
+                              , rotAxis = V3 0 0 1
+                              , rotation = 2.06
+                              , model = makeRotation (V3 0 0 1) 2.06 (V3 0 0 (-3))
                               , pid = literalPickId 255 0 0
                               }
 
@@ -133,6 +146,20 @@ setupCallback = do
                 }
 
         Left err -> return $ Left err
+
+animateCallback :: Render State ()
+animateCallback = do
+    duration <- frameDuration
+    modifyAppState (\state ->
+        state { entities =
+            map (\entity ->
+                    let newRotation = rotation entity + realToFrac duration * (pi / 12)
+                    in entity { rotation = newRotation
+                              , model = makeRotation (rotAxis entity) newRotation (pos entity)
+                              }
+                 ) (entities state)
+              }
+        )
 
 renderCallback :: Render State ()
 renderCallback = do
@@ -251,3 +278,6 @@ makeScaling (V3 x y z) =
        (V4 0 y 0 0)
        (V4 0 0 z 0)
        (V4 0 0 0 1)
+
+makeRotation :: V3 GLfloat -> GLfloat -> V3 GLfloat -> M44 GLfloat
+makeRotation axis theta = mkTransformation (axisAngle axis theta)
