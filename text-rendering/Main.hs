@@ -60,6 +60,9 @@ setupCallback = do
             fontAtlasLoc' <- Program.getUniformLocation prog "fontAtlas"
 
             GL.glClearColor 0 0 0.4 0
+            GL.glEnable GL.GL_BLEND
+            GL.glBlendFunc GL.GL_SRC_ALPHA GL.GL_ONE_MINUS_SRC_ALPHA
+
             meshh' <- Mesh.fromVector StaticDraw vertices indices
             text' <- Text.init font' "Haskell OpenGL Rock!"
 
