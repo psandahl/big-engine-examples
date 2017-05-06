@@ -3,18 +3,21 @@ module Main where
 import qualified BigE.Mesh              as Mesh
 import qualified BigE.Program           as Program
 import           BigE.Runtime
+import           BigE.TextRenderer      (TextRenderer)
+import qualified BigE.TextRenderer      as TextRenderer
 import           BigE.TextRenderer.Font (Font)
 import qualified BigE.TextRenderer.Font as Font
 import           BigE.TextRenderer.Text (Text (mesh))
 import qualified BigE.TextRenderer.Text as Text
 import           BigE.Types
-import           BigE.Util              (eitherTwo)
+import           BigE.Util              (eitherThree)
 import           Graphics.GL            (GLint)
 import qualified Graphics.GL            as GL
 
 data State = State
     { program      :: !Program
     , font         :: !Font
+    , textRenderer :: !TextRenderer
     , fontAtlasLoc :: !Location
     , text         :: !Text
     } deriving Show
@@ -40,9 +43,10 @@ setupCallback = do
                  , (FragmentShader, "text-rendering/fragment.glsl")
                  ]
     eFont <- Font.fromFile "text-rendering/noto-bold.fnt"
+    eTextRenderer <- TextRenderer.init
 
-    case eitherTwo (eProg, eFont) of
-        Right (prog, font') -> do
+    case eitherThree (eProg, eFont, eTextRenderer) of
+        Right (prog, font', textRenderer') -> do
             fontAtlasLoc' <- Program.getUniformLocation prog "fontAtlas"
 
             GL.glClearColor 0 0 0.4 0
@@ -54,6 +58,7 @@ setupCallback = do
             return $ Right State
                 { program = prog
                 , font = font'
+                , textRenderer = textRenderer'
                 , fontAtlasLoc = fontAtlasLoc'
                 , text = text'
                 }
@@ -81,5 +86,6 @@ teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
     Font.delete (font state)
+    TextRenderer.delete (textRenderer state)
     Text.delete (text state)
     Program.delete (program state)
