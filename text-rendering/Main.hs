@@ -67,18 +67,19 @@ renderCallback = do
     GL.glClear GL.GL_COLOR_BUFFER_BIT
 
     Program.enable (program state)
-    Mesh.enable (mesh $ text state)
+    Text.enable (text state)
     Font.enable 0 (font state)
     setUniform (fontAtlasLoc state) (0 :: GLint)
 
     Mesh.render Triangles (mesh $ text state)
 
     Font.disable 0
-    Mesh.disable
+    Text.disable
     Program.disable
 
 teardownCallback :: Render State ()
 teardownCallback = do
     state <- getAppStateUnsafe
     Font.delete (font state)
+    Text.delete (text state)
     Program.delete (program state)
