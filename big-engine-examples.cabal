@@ -102,4 +102,4 @@ executable text-rendering
                      , linear
                      , OpenGLRaw
                      , vector
-  ghc-options:         -Wall -O2
+  ghc-options:         -Wall -Werror -O2
