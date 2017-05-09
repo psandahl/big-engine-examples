@@ -17,6 +17,7 @@ import           BigE.Runtime             (Configuration (..), DisplayMode (..),
                                            setMousePressedCallback,
                                            setWindowSizeCallback)
 import qualified BigE.Texture             as Texture
+import           BigE.TexturedFramebuffer (TexturedFramebuffer (color))
 import           BigE.Types
 import           BigE.Util                (eitherThree)
 import           Control.Monad            (forM_, unless)
@@ -187,7 +188,7 @@ renderCallback = do
         boxScale = makeScaling (V3 xScale 1 1)
         mvp = vp !*! boxTrans state !*! boxScale
     setUniform (boxMvpLoc state) mvp
-    Texture.enable2D 0 (colorTexture $ picker state)
+    Texture.enable2D 0 (color $ framebuffer $ picker state)
     setUniform (boxTexLoc state) (0 :: GLint)
 
     Mesh.render Triangles (boxMesh state)
