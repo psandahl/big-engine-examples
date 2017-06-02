@@ -1,7 +1,8 @@
 module Main where
 
 import           BigE.Runtime
-import           BigE.TextRenderer      (RenderParams (..), TextRenderer)
+import           BigE.TextRenderer      (Position (..), RenderParams (..),
+                                         TextRenderer, defaultRenderParams)
 import qualified BigE.TextRenderer      as TextRenderer
 import qualified BigE.TextRenderer.Font as Font
 import           BigE.TextRenderer.Text (Text (..))
@@ -66,8 +67,9 @@ renderCallback :: Render State ()
 renderCallback = do
     state <- getAppStateUnsafe
 
+    let renderParams = defaultRenderParams { size = 25, position = LeftAt 0 0 }
     GL.glClear GL.GL_COLOR_BUFFER_BIT
-    TextRenderer.render (text state) (RenderParams 25) (textRenderer state)
+    TextRenderer.render (text state) renderParams (textRenderer state)
 
 teardownCallback :: Render State ()
 teardownCallback = do
