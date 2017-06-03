@@ -67,7 +67,7 @@ renderCallback :: Render State ()
 renderCallback = do
     state <- getAppStateUnsafe
 
-    let renderParams = defaultRenderParams { size = 25, position = LeftAt 0 0 }
+    let renderParams = defaultRenderParams { size = 26, position = CenterAt 0 0 }
     GL.glClear GL.GL_COLOR_BUFFER_BIT
     TextRenderer.render (text state) renderParams (textRenderer state)
 
