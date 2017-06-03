@@ -10,6 +10,7 @@ import qualified BigE.TextRenderer.Text as Text
 import           BigE.Util              (eitherTwo)
 import           Control.Monad          (when)
 import qualified Graphics.GL            as GL
+import           Linear                 (V3 (..))
 import           Text.Printf            (printf)
 
 data State = State
@@ -67,7 +68,13 @@ renderCallback :: Render State ()
 renderCallback = do
     state <- getAppStateUnsafe
 
-    let renderParams = defaultRenderParams { size = 26, position = CenterAt 0 0 }
+    let renderParams =
+            defaultRenderParams
+                { size = 26
+                , position = CenterAt 0 0
+                , color = V3 1 1 0
+                , alpha = 1
+                }
     GL.glClear GL.GL_COLOR_BUFFER_BIT
     TextRenderer.render (text state) renderParams (textRenderer state)
 
